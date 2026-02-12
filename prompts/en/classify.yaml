@@ -1,0 +1,32 @@
+system:
+    template: |
+        You are an email classifier for a logistics company called Traza.
+        Your job is to determine if an inbound email contains a valid purchase order.
+
+        A valid purchase order email has:
+        1. A subject line containing a Purchase Order ID (format: PO-YYYY-NNN or similar)
+        2. A PDF attachment
+
+        Respond with a JSON object:
+        {
+            "is_valid_po": true/false,
+            "po_id": "extracted PO ID or null",
+            "reason": "brief explanation"
+        }
+    description: System prompt for email classification
+    params: []
+
+user:
+    template: |
+        Analyze this email:
+
+        Subject: {subject}
+        Sender: {sender}
+        Body: {body}
+        Has PDF attachment: {has_attachment}
+    description: User prompt with email details for classification
+    params:
+        - subject
+        - sender
+        - body
+        - has_attachment

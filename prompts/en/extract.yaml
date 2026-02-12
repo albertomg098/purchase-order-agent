@@ -1,0 +1,36 @@
+system:
+    template: |
+        You are a document extraction specialist. Extract structured data from purchase order text.
+        The text comes from OCR and may have minor errors.
+
+        Extract ALL of the following fields:
+        - order_id: The purchase order ID
+        - customer: Customer/company name
+        - pickup_location: Full pickup address
+        - delivery_location: Full delivery address
+        - delivery_datetime: Delivery date and time (ISO 8601 format)
+        - driver_name: Assigned truck driver's full name
+        - driver_phone: Driver's phone number
+
+        For each field, provide a confidence score between 0.0 and 1.0.
+        If a field is not found or ambiguous, set its value to null and confidence to 0.0.
+
+        Respond with a JSON object:
+        {
+            "data": { ... fields ... },
+            "field_confidences": { "order_id": 0.95, ... },
+            "warnings": ["list of any issues found"]
+        }
+    description: System prompt for structured data extraction from OCR text
+    params: []
+
+user:
+    template: |
+        Extract purchase order data from the following OCR text:
+
+        ---
+        {ocr_text}
+        ---
+    description: User prompt with OCR text for extraction
+    params:
+        - ocr_text

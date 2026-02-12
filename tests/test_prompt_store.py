@@ -103,3 +103,53 @@ class TestLocalPromptStore:
         assert template is not None
         assert "subject" in template.params
         assert "body" in template.params
+
+
+REAL_PROMPTS_DIR = Path(__file__).parent.parent / "prompts"
+
+
+class TestRealPromptTemplates:
+    """Validate the actual prompt YAML files in prompts/en/."""
+
+    def test_classify_has_system_and_user(self):
+        store = LocalPromptStore(REAL_PROMPTS_DIR, language="en")
+        assert store.get("classify", "system") is not None
+        assert store.get("classify", "user") is not None
+
+    def test_extract_has_system_and_user(self):
+        store = LocalPromptStore(REAL_PROMPTS_DIR, language="en")
+        assert store.get("extract", "system") is not None
+        assert store.get("extract", "user") is not None
+
+    def test_notify_has_confirmation_missing_info_and_system(self):
+        store = LocalPromptStore(REAL_PROMPTS_DIR, language="en")
+        assert store.get("notify", "confirmation") is not None
+        assert store.get("notify", "missing_info") is not None
+        assert store.get("notify", "system") is not None
+
+    def test_classify_user_params(self):
+        store = LocalPromptStore(REAL_PROMPTS_DIR, language="en")
+        template = store.get("classify", "user")
+        assert set(template.params) == {"subject", "sender", "body", "has_attachment"}
+
+    def test_extract_user_params(self):
+        store = LocalPromptStore(REAL_PROMPTS_DIR, language="en")
+        template = store.get("extract", "user")
+        assert template.params == ["ocr_text"]
+
+    def test_notify_confirmation_params(self):
+        store = LocalPromptStore(REAL_PROMPTS_DIR, language="en")
+        template = store.get("notify", "confirmation")
+        expected = {"order_id", "customer", "pickup_location", "delivery_location", "delivery_datetime", "driver_name"}
+        assert set(template.params) == expected
+
+    def test_notify_missing_info_params(self):
+        store = LocalPromptStore(REAL_PROMPTS_DIR, language="en")
+        template = store.get("notify", "missing_info")
+        assert set(template.params) == {"order_id", "missing_fields_description"}
+
+    def test_system_prompts_have_no_params(self):
+        store = LocalPromptStore(REAL_PROMPTS_DIR, language="en")
+        for category in ["classify", "extract", "notify"]:
+            template = store.get(category, "system")
+            assert template.params == [], f"{category}/system should have no params"
