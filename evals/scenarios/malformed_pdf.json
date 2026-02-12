@@ -1,0 +1,164 @@
+{
+  "scenarios": [
+    {
+      "id": "malformed_pdf_01",
+      "description": "PO with missing hyphen in ID, non-standard date, dots in phone",
+      "category": "malformed_pdf",
+      "input": {
+        "email_subject": "Purchase Order PO2025-020",
+        "email_body": "Attached is our purchase order. Please confirm.",
+        "email_sender": "admin@globaltrans.es",
+        "email_message_id": "msg_ml_001",
+        "has_attachment": true,
+        "pdf_fixture": "malformed_pdf/malformed_01.pdf"
+      },
+      "expected": {
+        "is_valid_po": true,
+        "po_id": "PO2025-020",
+        "extracted_data": {
+          "order_id": "PO2025-020",
+          "customer": "GLOBAL TRANS S.L.",
+          "pickup_location": "C/ Industria 45, Pol. Ind. Sur, Granada",
+          "delivery_location": "Avda. Constitución 12, 3ºA, Córdoba",
+          "delivery_datetime": "2025-01-18T08:00:00",
+          "driver_name": "josé antonio lópez",
+          "driver_phone": "600.123.456"
+        },
+        "missing_fields": [],
+        "expected_trajectory": ["classify", "extract", "validate", "track", "notify", "report"],
+        "final_status": "completed",
+        "expected_sheet_update": true,
+        "expected_confirmation_email": true,
+        "expected_missing_info_email": false
+      }
+    },
+    {
+      "id": "malformed_pdf_02",
+      "description": "PO with slash in ID, all-caps/lowercase mix, dash in phone",
+      "category": "malformed_pdf",
+      "input": {
+        "email_subject": "PO 2025/021 - Order",
+        "email_body": "Order attached for processing.",
+        "email_sender": "garcia@transportesgarcia.com",
+        "email_message_id": "msg_ml_002",
+        "has_attachment": true,
+        "pdf_fixture": "malformed_pdf/malformed_02.pdf"
+      },
+      "expected": {
+        "is_valid_po": true,
+        "po_id": "PO 2025/021",
+        "extracted_data": {
+          "order_id": "PO 2025/021",
+          "customer": "transportes garcia & hijos",
+          "pickup_location": "NAVE 7 POL IND LAS QUEMADAS CORDOBA",
+          "delivery_location": "c/ real 45 bajo jaen",
+          "delivery_datetime": "2025-02-20T15:00:00",
+          "driver_name": "MIGUEL ÁNGEL TORRES",
+          "driver_phone": "34 677-888-999"
+        },
+        "missing_fields": [],
+        "expected_trajectory": ["classify", "extract", "validate", "track", "notify", "report"],
+        "final_status": "completed",
+        "expected_sheet_update": true,
+        "expected_confirmation_email": true,
+        "expected_missing_info_email": false
+      }
+    },
+    {
+      "id": "malformed_pdf_03",
+      "description": "PO with dots in ID, abbreviated names, AM/PM time",
+      "category": "malformed_pdf",
+      "input": {
+        "email_subject": "P.O.-2025-022",
+        "email_body": "PO document attached.",
+        "email_sender": "info@lgtcsmed.es",
+        "email_message_id": "msg_ml_003",
+        "has_attachment": true,
+        "pdf_fixture": "malformed_pdf/malformed_03.pdf"
+      },
+      "expected": {
+        "is_valid_po": true,
+        "po_id": "P.O.-2025-022",
+        "extracted_data": {
+          "order_id": "P.O.-2025-022",
+          "customer": "Lgtcs. Mediterráneo",
+          "pickup_location": "Muelle 3, Puerto de Cartagena, Murcia",
+          "delivery_location": "Pza. Mayor s/n, Albacete (detrás del ayuntamiento)",
+          "delivery_datetime": "2025-03-15T09:00:00",
+          "driver_name": "Fco. Javier Ruiz Mtnz.",
+          "driver_phone": "(+34) 688 12 34 56"
+        },
+        "missing_fields": [],
+        "expected_trajectory": ["classify", "extract", "validate", "track", "notify", "report"],
+        "final_status": "completed",
+        "expected_sheet_update": true,
+        "expected_confirmation_email": true,
+        "expected_missing_info_email": false
+      }
+    },
+    {
+      "id": "malformed_pdf_04",
+      "description": "PO with reversed ID format, @ symbol in time, no spaces in phone",
+      "category": "malformed_pdf",
+      "input": {
+        "email_subject": "Order 2025-PO-023",
+        "email_body": "See attached order document.",
+        "email_sender": "orders@eastwestcargo.eu",
+        "email_message_id": "msg_ml_004",
+        "has_attachment": true,
+        "pdf_fixture": "malformed_pdf/malformed_04.pdf"
+      },
+      "expected": {
+        "is_valid_po": true,
+        "po_id": "2025-PO-023",
+        "extracted_data": {
+          "order_id": "2025-PO-023",
+          "customer": "EAST-WEST CARGO SLU",
+          "pickup_location": "Apt. Correos 234 - Zona Franca Barcelona",
+          "delivery_location": "KM 34 Autovía A-2, Lleida",
+          "delivery_datetime": "2025-04-10T11:00:00",
+          "driver_name": "R. Fernández",
+          "driver_phone": "+34600111222"
+        },
+        "missing_fields": [],
+        "expected_trajectory": ["classify", "extract", "validate", "track", "notify", "report"],
+        "final_status": "completed",
+        "expected_sheet_update": true,
+        "expected_confirmation_email": true,
+        "expected_missing_info_email": false
+      }
+    },
+    {
+      "id": "malformed_pdf_05",
+      "description": "PO with lowercase ID, reversed name format, verbose date",
+      "category": "malformed_pdf",
+      "input": {
+        "email_subject": "po-2025-024 purchase order",
+        "email_body": "Attached PO for the Sevilla route.",
+        "email_sender": "manuel@hermanoslopez.es",
+        "email_message_id": "msg_ml_005",
+        "has_attachment": true,
+        "pdf_fixture": "malformed_pdf/malformed_05.pdf"
+      },
+      "expected": {
+        "is_valid_po": true,
+        "po_id": "po-2025-024",
+        "extracted_data": {
+          "order_id": "po-2025-024",
+          "customer": "HERMANOS LÓPEZ TRANSPORT",
+          "pickup_location": "Ctra. Nacional 340 km 12, Algeciras",
+          "delivery_location": "Mercasevilla, Módulo 5, Sevilla",
+          "delivery_datetime": "2025-05-05T07:00:00",
+          "driver_name": "LÓPEZ GARCÍA, Manuel",
+          "driver_phone": "0034 699 00 11 22"
+        },
+        "missing_fields": [],
+        "expected_trajectory": ["classify", "extract", "validate", "track", "notify", "report"],
+        "final_status": "completed",
+        "expected_sheet_update": true,
+        "expected_confirmation_email": true,
+        "expected_missing_info_email": false
+      }
+    }
+  ]
+}

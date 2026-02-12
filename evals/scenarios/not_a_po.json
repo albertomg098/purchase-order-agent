@@ -1,0 +1,124 @@
+{
+  "scenarios": [
+    {
+      "id": "not_a_po_01",
+      "description": "Newsletter email with PDF attachment",
+      "category": "not_a_po",
+      "input": {
+        "email_subject": "Monthly Logistics Newsletter - March 2025",
+        "email_body": "Please find our monthly newsletter attached.",
+        "email_sender": "newsletter@logisticsnews.com",
+        "email_message_id": "msg_np_001",
+        "has_attachment": true,
+        "pdf_fixture": "not_a_po/not_po_newsletter_01.pdf"
+      },
+      "expected": {
+        "is_valid_po": false,
+        "po_id": null,
+        "extracted_data": null,
+        "missing_fields": [],
+        "expected_trajectory": ["classify"],
+        "final_status": "skipped",
+        "expected_sheet_update": false,
+        "expected_confirmation_email": false,
+        "expected_missing_info_email": false
+      }
+    },
+    {
+      "id": "not_a_po_02",
+      "description": "Invoice email, not a purchase order",
+      "category": "not_a_po",
+      "input": {
+        "email_subject": "Invoice #INV-2025-5001",
+        "email_body": "Please find attached your invoice for Q1 services.",
+        "email_sender": "billing@fleetmaintenance.com",
+        "email_message_id": "msg_np_002",
+        "has_attachment": true,
+        "pdf_fixture": "not_a_po/not_po_invoice_01.pdf"
+      },
+      "expected": {
+        "is_valid_po": false,
+        "po_id": null,
+        "extracted_data": null,
+        "missing_fields": [],
+        "expected_trajectory": ["classify"],
+        "final_status": "skipped",
+        "expected_sheet_update": false,
+        "expected_confirmation_email": false,
+        "expected_missing_info_email": false
+      }
+    },
+    {
+      "id": "not_a_po_03",
+      "description": "General service inquiry, no attachment",
+      "category": "not_a_po",
+      "input": {
+        "email_subject": "Question about your logistics services",
+        "email_body": "Hi, we are interested in your services. Could you send us a quote for 50 deliveries per month?",
+        "email_sender": "javier@startupco.com",
+        "email_message_id": "msg_np_003",
+        "has_attachment": false,
+        "pdf_fixture": null
+      },
+      "expected": {
+        "is_valid_po": false,
+        "po_id": null,
+        "extracted_data": null,
+        "missing_fields": [],
+        "expected_trajectory": ["classify"],
+        "final_status": "skipped",
+        "expected_sheet_update": false,
+        "expected_confirmation_email": false,
+        "expected_missing_info_email": false
+      }
+    },
+    {
+      "id": "not_a_po_04",
+      "description": "Spam email with PDF attachment",
+      "category": "not_a_po",
+      "input": {
+        "email_subject": "URGENT: Claim Your Prize!",
+        "email_body": "Congratulations! You have been selected as the winner of our annual draw.",
+        "email_sender": "winner@totallyrealprizes.com",
+        "email_message_id": "msg_np_004",
+        "has_attachment": true,
+        "pdf_fixture": "not_a_po/not_po_spam_01.pdf"
+      },
+      "expected": {
+        "is_valid_po": false,
+        "po_id": null,
+        "extracted_data": null,
+        "missing_fields": [],
+        "expected_trajectory": ["classify"],
+        "final_status": "skipped",
+        "expected_sheet_update": false,
+        "expected_confirmation_email": false,
+        "expected_missing_info_email": false
+      }
+    },
+    {
+      "id": "not_a_po_05",
+      "description": "Internal memo, no purchase order",
+      "category": "not_a_po",
+      "input": {
+        "email_subject": "Internal Memo: Office Closure March 28th",
+        "email_body": "Please note the office will be closed on Friday for the company retreat.",
+        "email_sender": "hr@traza.es",
+        "email_message_id": "msg_np_005",
+        "has_attachment": true,
+        "pdf_fixture": "not_a_po/not_po_internal_01.pdf"
+      },
+      "expected": {
+        "is_valid_po": false,
+        "po_id": null,
+        "extracted_data": null,
+        "missing_fields": [],
+        "expected_trajectory": ["classify"],
+        "final_status": "skipped",
+        "expected_sheet_update": false,
+        "expected_confirmation_email": false,
+        "expected_missing_info_email": false
+      }
+    }
+  ]
+}

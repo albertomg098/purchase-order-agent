@@ -1,0 +1,164 @@
+{
+  "scenarios": [
+    {
+      "id": "happy_path_01",
+      "description": "Complete PO with all fields, standard format",
+      "category": "happy_path",
+      "input": {
+        "email_subject": "Purchase Order PO-2025-001",
+        "email_body": "Please find attached the purchase order for processing.",
+        "email_sender": "orders@acmelogistics.com",
+        "email_message_id": "msg_hp_001",
+        "has_attachment": true,
+        "pdf_fixture": "happy_path/complete_01.pdf"
+      },
+      "expected": {
+        "is_valid_po": true,
+        "po_id": "PO-2025-001",
+        "extracted_data": {
+          "order_id": "PO-2025-001",
+          "customer": "Acme Logistics Ltd.",
+          "pickup_location": "Warehouse A, 123 Industrial Rd, Madrid",
+          "delivery_location": "Retail Hub B, 456 Market St, Barcelona",
+          "delivery_datetime": "2025-01-18T08:00:00",
+          "driver_name": "Juan Pérez",
+          "driver_phone": "+34 600 123 456"
+        },
+        "missing_fields": [],
+        "expected_trajectory": ["classify", "extract", "validate", "track", "notify", "report"],
+        "final_status": "completed",
+        "expected_sheet_update": true,
+        "expected_confirmation_email": true,
+        "expected_missing_info_email": false
+      }
+    },
+    {
+      "id": "happy_path_02",
+      "description": "Complete PO from Mediterranean Freight, standard format",
+      "category": "happy_path",
+      "input": {
+        "email_subject": "PO-2025-042 - New Purchase Order",
+        "email_body": "Hi, please process the attached purchase order at your earliest convenience.",
+        "email_sender": "logistics@medfreight.com",
+        "email_message_id": "msg_hp_002",
+        "has_attachment": true,
+        "pdf_fixture": "happy_path/complete_02.pdf"
+      },
+      "expected": {
+        "is_valid_po": true,
+        "po_id": "PO-2025-042",
+        "extracted_data": {
+          "order_id": "PO-2025-042",
+          "customer": "Mediterranean Freight Co.",
+          "pickup_location": "Port Terminal C, Dock 7, Valencia",
+          "delivery_location": "Distribution Center, 89 Logistics Ave, Zaragoza",
+          "delivery_datetime": "2025-02-20T14:30:00",
+          "driver_name": "María García López",
+          "driver_phone": "+34 611 234 567"
+        },
+        "missing_fields": [],
+        "expected_trajectory": ["classify", "extract", "validate", "track", "notify", "report"],
+        "final_status": "completed",
+        "expected_sheet_update": true,
+        "expected_confirmation_email": true,
+        "expected_missing_info_email": false
+      }
+    },
+    {
+      "id": "happy_path_03",
+      "description": "Complete PO for cold chain delivery",
+      "category": "happy_path",
+      "input": {
+        "email_subject": "Purchase Order PO-2025-088 - Urgent Cold Chain",
+        "email_body": "Attached PO for cold chain delivery. Please confirm ASAP.",
+        "email_sender": "ops@transiberia.es",
+        "email_message_id": "msg_hp_003",
+        "has_attachment": true,
+        "pdf_fixture": "happy_path/complete_03.pdf"
+      },
+      "expected": {
+        "is_valid_po": true,
+        "po_id": "PO-2025-088",
+        "extracted_data": {
+          "order_id": "PO-2025-088",
+          "customer": "TransIberia Express S.A.",
+          "pickup_location": "Cold Storage Unit 5, Mercamadrid, Madrid",
+          "delivery_location": "SuperFresh Market, 12 Paseo de Gracia, Barcelona",
+          "delivery_datetime": "2025-03-10T06:00:00",
+          "driver_name": "Pedro Sánchez Ruiz",
+          "driver_phone": "+34 622 987 654"
+        },
+        "missing_fields": [],
+        "expected_trajectory": ["classify", "extract", "validate", "track", "notify", "report"],
+        "final_status": "completed",
+        "expected_sheet_update": true,
+        "expected_confirmation_email": true,
+        "expected_missing_info_email": false
+      }
+    },
+    {
+      "id": "happy_path_04",
+      "description": "Complete PO for hospital delivery",
+      "category": "happy_path",
+      "input": {
+        "email_subject": "PO-2025-103 Purchase Order",
+        "email_body": "Please see attached purchase order for medical supplies delivery.",
+        "email_sender": "procurement@iberiancoldchain.com",
+        "email_message_id": "msg_hp_004",
+        "has_attachment": true,
+        "pdf_fixture": "happy_path/complete_04.pdf"
+      },
+      "expected": {
+        "is_valid_po": true,
+        "po_id": "PO-2025-103",
+        "extracted_data": {
+          "order_id": "PO-2025-103",
+          "customer": "Iberian Cold Chain Ltd.",
+          "pickup_location": "Freezer Warehouse 3, Pol. Ind. Norte, Vitoria",
+          "delivery_location": "Hospital Central, Av. Sanidad 1, Pamplona",
+          "delivery_datetime": "2025-04-05T10:00:00",
+          "driver_name": "Elena Fernández",
+          "driver_phone": "+34 633 111 222"
+        },
+        "missing_fields": [],
+        "expected_trajectory": ["classify", "extract", "validate", "track", "notify", "report"],
+        "final_status": "completed",
+        "expected_sheet_update": true,
+        "expected_confirmation_email": true,
+        "expected_missing_info_email": false
+      }
+    },
+    {
+      "id": "happy_path_05",
+      "description": "Complete PO for retail delivery",
+      "category": "happy_path",
+      "input": {
+        "email_subject": "New PO: PO-2025-150",
+        "email_body": "Attached is the purchase order for the shopping center delivery.",
+        "email_sender": "orders@soltrans.es",
+        "email_message_id": "msg_hp_005",
+        "has_attachment": true,
+        "pdf_fixture": "happy_path/complete_05.pdf"
+      },
+      "expected": {
+        "is_valid_po": true,
+        "po_id": "PO-2025-150",
+        "extracted_data": {
+          "order_id": "PO-2025-150",
+          "customer": "SolTrans Logistics",
+          "pickup_location": "Nave 12, Pol. Ind. Guadalhorce, Málaga",
+          "delivery_location": "Centro Comercial Nervión, Sevilla",
+          "delivery_datetime": "2025-05-22T16:00:00",
+          "driver_name": "Antonio Morales",
+          "driver_phone": "+34 644 333 444"
+        },
+        "missing_fields": [],
+        "expected_trajectory": ["classify", "extract", "validate", "track", "notify", "report"],
+        "final_status": "completed",
+        "expected_sheet_update": true,
+        "expected_confirmation_email": true,
+        "expected_missing_info_email": false
+      }
+    }
+  ]
+}

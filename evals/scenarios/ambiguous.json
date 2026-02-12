@@ -1,0 +1,164 @@
+{
+  "scenarios": [
+    {
+      "id": "ambiguous_01",
+      "description": "PO with truncated phone number",
+      "category": "ambiguous",
+      "input": {
+        "email_subject": "Purchase Order PO-2025-030",
+        "email_body": "PO attached. Note: driver phone may be incomplete in the document.",
+        "email_sender": "dispatch@atlascargo.es",
+        "email_message_id": "msg_am_001",
+        "has_attachment": true,
+        "pdf_fixture": "ambiguous/ambiguous_truncated_phone_01.pdf"
+      },
+      "expected": {
+        "is_valid_po": true,
+        "po_id": "PO-2025-030",
+        "extracted_data": {
+          "order_id": "PO-2025-030",
+          "customer": "Atlas Cargo S.L.",
+          "pickup_location": "Nave 2, Pol. Ind. Henares, Guadalajara",
+          "delivery_location": "C/ Comercio 15, Valladolid",
+          "delivery_datetime": "2025-06-01T10:00:00",
+          "driver_name": "Roberto Díaz",
+          "driver_phone": "+34 6..."
+        },
+        "missing_fields": ["driver_phone"],
+        "expected_trajectory": ["classify", "extract", "validate", "notify", "report"],
+        "final_status": "missing_info",
+        "expected_sheet_update": false,
+        "expected_confirmation_email": false,
+        "expected_missing_info_email": true
+      }
+    },
+    {
+      "id": "ambiguous_02",
+      "description": "PO with abbreviated addresses and customer name",
+      "category": "ambiguous",
+      "input": {
+        "email_subject": "PO-2025-031",
+        "email_body": "Order attached for Huelva delivery.",
+        "email_sender": "info@quickdel.es",
+        "email_message_id": "msg_am_002",
+        "has_attachment": true,
+        "pdf_fixture": "ambiguous/ambiguous_abbreviated_addr_01.pdf"
+      },
+      "expected": {
+        "is_valid_po": true,
+        "po_id": "PO-2025-031",
+        "extracted_data": {
+          "order_id": "PO-2025-031",
+          "customer": "Quick Del. Services",
+          "pickup_location": "Pol. Ind. S. Fernando, Cádiz",
+          "delivery_location": "Av. Constitución, Huelva (preg. por José)",
+          "delivery_datetime": "2025-06-15T08:00:00",
+          "driver_name": "J. Martínez",
+          "driver_phone": "+34 655 432 100"
+        },
+        "missing_fields": [],
+        "expected_trajectory": ["classify", "extract", "validate", "track", "notify", "report"],
+        "final_status": "completed",
+        "expected_sheet_update": true,
+        "expected_confirmation_email": true,
+        "expected_missing_info_email": false
+      }
+    },
+    {
+      "id": "ambiguous_03",
+      "description": "PO with date missing year",
+      "category": "ambiguous",
+      "input": {
+        "email_subject": "Purchase Order PO-2025-032",
+        "email_body": "PO attached. Please confirm delivery schedule.",
+        "email_sender": "logistics@eurotrans.eu",
+        "email_message_id": "msg_am_003",
+        "has_attachment": true,
+        "pdf_fixture": "ambiguous/ambiguous_no_year_01.pdf"
+      },
+      "expected": {
+        "is_valid_po": true,
+        "po_id": "PO-2025-032",
+        "extracted_data": {
+          "order_id": "PO-2025-032",
+          "customer": "EuroTrans Continental",
+          "pickup_location": "Terminal de Carga, Aeropuerto de Barajas, Madrid",
+          "delivery_location": "Centro Logístico, Pol. Ind. Júndiz, Vitoria",
+          "delivery_datetime": "2025-03-15T14:00:00",
+          "driver_name": "Iñaki Zubiaurre",
+          "driver_phone": "+34 688 765 432"
+        },
+        "missing_fields": [],
+        "expected_trajectory": ["classify", "extract", "validate", "track", "notify", "report"],
+        "final_status": "completed",
+        "expected_sheet_update": true,
+        "expected_confirmation_email": true,
+        "expected_missing_info_email": false
+      }
+    },
+    {
+      "id": "ambiguous_04",
+      "description": "PO with very similar pickup and delivery addresses",
+      "category": "ambiguous",
+      "input": {
+        "email_subject": "PO-2025-033 - Delivery Order",
+        "email_body": "Attached PO. Note the addresses are in adjacent industrial parks.",
+        "email_sender": "ops@doblevia.es",
+        "email_message_id": "msg_am_004",
+        "has_attachment": true,
+        "pdf_fixture": "ambiguous/ambiguous_similar_addresses_01.pdf"
+      },
+      "expected": {
+        "is_valid_po": true,
+        "po_id": "PO-2025-033",
+        "extracted_data": {
+          "order_id": "PO-2025-033",
+          "customer": "Doble Vía Logistics",
+          "pickup_location": "C/ Industria 10, Pol. Ind. Norte, Getafe, Madrid",
+          "delivery_location": "C/ Industria 10, Pol. Ind. Sur, Leganés, Madrid",
+          "delivery_datetime": "2025-07-01T09:00:00",
+          "driver_name": "Carmen Delgado Ruiz",
+          "driver_phone": "+34 611 222 333"
+        },
+        "missing_fields": [],
+        "expected_trajectory": ["classify", "extract", "validate", "track", "notify", "report"],
+        "final_status": "completed",
+        "expected_sheet_update": true,
+        "expected_confirmation_email": true,
+        "expected_missing_info_email": false
+      }
+    },
+    {
+      "id": "ambiguous_05",
+      "description": "PO with mixed French/Spanish, dual phone numbers and driver names",
+      "category": "ambiguous",
+      "input": {
+        "email_subject": "Purchase Order PO-2025-034 (Cross-border)",
+        "email_body": "Cross-border delivery PO attached. Driver has both FR and ES numbers.",
+        "email_sender": "freight@crossbordereu.com",
+        "email_message_id": "msg_am_005",
+        "has_attachment": true,
+        "pdf_fixture": "ambiguous/ambiguous_mixed_lang_01.pdf"
+      },
+      "expected": {
+        "is_valid_po": true,
+        "po_id": "PO-2025-034",
+        "extracted_data": {
+          "order_id": "PO-2025-034",
+          "customer": "Cross-Border Freight EU",
+          "pickup_location": "Entrepôt 4, Zone Industrielle, Perpignan, France",
+          "delivery_location": "Almacén B7, Pol. Logístic, La Jonquera, Girona",
+          "delivery_datetime": "2025-07-20T11:30:00",
+          "driver_name": "Jean-Pierre / Juan Pedro Martín",
+          "driver_phone": "+33 6 12 34 56 78 / +34 612 345 678"
+        },
+        "missing_fields": [],
+        "expected_trajectory": ["classify", "extract", "validate", "track", "notify", "report"],
+        "final_status": "completed",
+        "expected_sheet_update": true,
+        "expected_confirmation_email": true,
+        "expected_missing_info_email": false
+      }
+    }
+  ]
+}

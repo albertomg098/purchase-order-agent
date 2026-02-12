@@ -1,0 +1,164 @@
+{
+  "scenarios": [
+    {
+      "id": "missing_fields_01",
+      "description": "PO missing driver phone number",
+      "category": "missing_fields",
+      "input": {
+        "email_subject": "Purchase Order PO-2025-010",
+        "email_body": "Please process the attached PO.",
+        "email_sender": "dispatch@northstarshipping.com",
+        "email_message_id": "msg_mf_001",
+        "has_attachment": true,
+        "pdf_fixture": "missing_fields/missing_phone_01.pdf"
+      },
+      "expected": {
+        "is_valid_po": true,
+        "po_id": "PO-2025-010",
+        "extracted_data": {
+          "order_id": "PO-2025-010",
+          "customer": "NorthStar Shipping",
+          "pickup_location": "Warehouse D, 10 Port Rd, Bilbao",
+          "delivery_location": "Store E, 22 Gran Vía, Madrid",
+          "delivery_datetime": "2025-03-01T09:00:00",
+          "driver_name": "Carlos Ruiz",
+          "driver_phone": null
+        },
+        "missing_fields": ["driver_phone"],
+        "expected_trajectory": ["classify", "extract", "validate", "notify", "report"],
+        "final_status": "missing_info",
+        "expected_sheet_update": false,
+        "expected_confirmation_email": false,
+        "expected_missing_info_email": true
+      }
+    },
+    {
+      "id": "missing_fields_02",
+      "description": "PO missing driver name and phone",
+      "category": "missing_fields",
+      "input": {
+        "email_subject": "PO-2025-011 Attached",
+        "email_body": "Here is the purchase order. Driver TBD.",
+        "email_sender": "ops@iberianexpress.es",
+        "email_message_id": "msg_mf_002",
+        "has_attachment": true,
+        "pdf_fixture": "missing_fields/missing_driver_01.pdf"
+      },
+      "expected": {
+        "is_valid_po": true,
+        "po_id": "PO-2025-011",
+        "extracted_data": {
+          "order_id": "PO-2025-011",
+          "customer": "Iberian Express",
+          "pickup_location": "Factory F, Industrial Park, Sevilla",
+          "delivery_location": "Warehouse G, 5 Commerce St, Málaga",
+          "delivery_datetime": "2025-03-05T11:00:00",
+          "driver_name": null,
+          "driver_phone": null
+        },
+        "missing_fields": ["driver_name", "driver_phone"],
+        "expected_trajectory": ["classify", "extract", "validate", "notify", "report"],
+        "final_status": "missing_info",
+        "expected_sheet_update": false,
+        "expected_confirmation_email": false,
+        "expected_missing_info_email": true
+      }
+    },
+    {
+      "id": "missing_fields_03",
+      "description": "PO missing delivery date and time",
+      "category": "missing_fields",
+      "input": {
+        "email_subject": "Purchase Order PO-2025-012",
+        "email_body": "PO attached. Delivery date to be confirmed.",
+        "email_sender": "admin@costalogistics.es",
+        "email_message_id": "msg_mf_003",
+        "has_attachment": true,
+        "pdf_fixture": "missing_fields/missing_delivery_date_01.pdf"
+      },
+      "expected": {
+        "is_valid_po": true,
+        "po_id": "PO-2025-012",
+        "extracted_data": {
+          "order_id": "PO-2025-012",
+          "customer": "Costa Logistics",
+          "pickup_location": "Terminal H, 33 Harbor Blvd, Alicante",
+          "delivery_location": "Depot I, 77 Industrial Rd, Murcia",
+          "delivery_datetime": null,
+          "driver_name": "Ana Martín",
+          "driver_phone": "+34 622 345 678"
+        },
+        "missing_fields": ["delivery_datetime"],
+        "expected_trajectory": ["classify", "extract", "validate", "notify", "report"],
+        "final_status": "missing_info",
+        "expected_sheet_update": false,
+        "expected_confirmation_email": false,
+        "expected_missing_info_email": true
+      }
+    },
+    {
+      "id": "missing_fields_04",
+      "description": "PO missing pickup location",
+      "category": "missing_fields",
+      "input": {
+        "email_subject": "PO-2025-013 - New Order",
+        "email_body": "Attached PO. Pickup address will follow separately.",
+        "email_sender": "pedidos@rapidotrans.es",
+        "email_message_id": "msg_mf_004",
+        "has_attachment": true,
+        "pdf_fixture": "missing_fields/missing_pickup_01.pdf"
+      },
+      "expected": {
+        "is_valid_po": true,
+        "po_id": "PO-2025-013",
+        "extracted_data": {
+          "order_id": "PO-2025-013",
+          "customer": "RápidoTrans S.L.",
+          "pickup_location": null,
+          "delivery_location": "Almacén Central, C/ Logística 8, Toledo",
+          "delivery_datetime": "2025-04-12T07:30:00",
+          "driver_name": "Luis Herrera",
+          "driver_phone": "+34 655 777 888"
+        },
+        "missing_fields": ["pickup_location"],
+        "expected_trajectory": ["classify", "extract", "validate", "notify", "report"],
+        "final_status": "missing_info",
+        "expected_sheet_update": false,
+        "expected_confirmation_email": false,
+        "expected_missing_info_email": true
+      }
+    },
+    {
+      "id": "missing_fields_05",
+      "description": "PO missing customer name",
+      "category": "missing_fields",
+      "input": {
+        "email_subject": "Purchase Order PO-2025-014",
+        "email_body": "PO for upcoming shipment attached.",
+        "email_sender": "unknown@gmail.com",
+        "email_message_id": "msg_mf_005",
+        "has_attachment": true,
+        "pdf_fixture": "missing_fields/missing_customer_01.pdf"
+      },
+      "expected": {
+        "is_valid_po": true,
+        "po_id": "PO-2025-014",
+        "extracted_data": {
+          "order_id": "PO-2025-014",
+          "customer": null,
+          "pickup_location": "Puerto Seco, Coslada, Madrid",
+          "delivery_location": "Plataforma Logística, Zaragoza",
+          "delivery_datetime": "2025-05-01T13:00:00",
+          "driver_name": "Sofía Navarro",
+          "driver_phone": "+34 666 999 000"
+        },
+        "missing_fields": ["customer"],
+        "expected_trajectory": ["classify", "extract", "validate", "notify", "report"],
+        "final_status": "missing_info",
+        "expected_sheet_update": false,
+        "expected_confirmation_email": false,
+        "expected_missing_info_email": true
+      }
+    }
+  ]
+}
