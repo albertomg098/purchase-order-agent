@@ -1,0 +1,15 @@
+system:
+    template: |
+        You are an email classifier.
+    description: System prompt for classification
+    params: []
+
+user:
+    template: |
+        Analyze this email:
+        Subject: {subject}
+        Body: {body}
+    description: User prompt with email details
+    params:
+        - subject
+        - body

@@ -1,0 +1,7 @@
+confirmation:
+    template: |
+        Confirm order {order_id} for {customer}.
+    description: Confirmation email template
+    params:
+        - order_id
+        - customer

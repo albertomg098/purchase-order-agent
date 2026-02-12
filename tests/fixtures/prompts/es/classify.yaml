@@ -1,0 +1,5 @@
+system:
+    template: |
+        Eres un clasificador de emails.
+    description: Prompt de sistema para clasificación
+    params: []
