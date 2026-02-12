@@ -1,4 +1,4 @@
-"""Unit tests for core models: PurchaseOrder, ExtractionResult, WebhookPayload."""
+"""Unit tests for core models: PurchaseOrder, ExtractionResult, WebhookPayload, LLM responses."""
 from datetime import datetime
 
 import pytest
@@ -6,6 +6,7 @@ from pydantic import ValidationError
 
 from src.core.purchase_order import PurchaseOrder, ExtractionResult
 from src.core.webhook import WebhookPayload
+from src.core.llm_responses import ClassificationResult, LLMExtractionResponse
 
 
 # --- PurchaseOrder ---
@@ -135,3 +136,83 @@ class TestWebhookPayload:
         )
         assert len(payload.attachment_ids) == 2
         assert payload.thread_id == "thread_123"
+
+
+# --- ClassificationResult ---
+
+
+class TestClassificationResult:
+    def test_creates_valid_po_result(self):
+        result = ClassificationResult(
+            is_valid_po=True,
+            po_id="PO-2025-001",
+            reason="Email contains purchase order attachment",
+        )
+        assert result.is_valid_po is True
+        assert result.po_id == "PO-2025-001"
+        assert result.reason == "Email contains purchase order attachment"
+
+    def test_creates_non_po_result(self):
+        result = ClassificationResult(
+            is_valid_po=False,
+            reason="Email is a marketing newsletter",
+        )
+        assert result.is_valid_po is False
+        assert result.po_id is None
+
+    def test_po_id_defaults_to_none(self):
+        result = ClassificationResult(is_valid_po=False, reason="Not a PO")
+        assert result.po_id is None
+
+    def test_requires_is_valid_po_and_reason(self):
+        with pytest.raises(ValidationError):
+            ClassificationResult()
+
+
+# --- LLMExtractionResponse ---
+
+
+class TestLLMExtractionResponse:
+    def test_creates_with_full_data(self):
+        result = LLMExtractionResponse(
+            data={
+                "order_id": "PO-2025-001",
+                "customer": "Acme Corp",
+                "pickup_location": "Warehouse A",
+                "delivery_location": "Retail Hub B",
+                "delivery_datetime": "2025-01-18T08:00:00",
+                "driver_name": "Juan Pérez",
+                "driver_phone": "+34 600 123 456",
+            },
+            field_confidences={
+                "order_id": 0.95,
+                "customer": 0.90,
+                "pickup_location": 0.85,
+                "delivery_location": 0.80,
+                "delivery_datetime": 0.75,
+                "driver_name": 0.70,
+                "driver_phone": 0.65,
+            },
+            warnings=["Low confidence on driver_phone"],
+        )
+        assert result.data["order_id"] == "PO-2025-001"
+        assert result.field_confidences["order_id"] == 0.95
+        assert len(result.warnings) == 1
+
+    def test_data_allows_none_values(self):
+        result = LLMExtractionResponse(
+            data={"order_id": "PO-001", "customer": None},
+            field_confidences={"order_id": 0.9, "customer": 0.1},
+        )
+        assert result.data["customer"] is None
+
+    def test_warnings_defaults_to_empty_list(self):
+        result = LLMExtractionResponse(
+            data={"order_id": "PO-001"},
+            field_confidences={"order_id": 0.9},
+        )
+        assert result.warnings == []
+
+    def test_requires_data_and_field_confidences(self):
+        with pytest.raises(ValidationError):
+            LLMExtractionResponse()

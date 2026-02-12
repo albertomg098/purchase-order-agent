@@ -2,6 +2,8 @@ from typing import TypedDict
 
 
 class POWorkflowState(TypedDict, total=False):
+    """State container for the purchase order workflow."""
+
     # --- Input (populated from webhook) ---
     email_subject: str
     email_body: str
@@ -17,7 +19,7 @@ class POWorkflowState(TypedDict, total=False):
 
     # --- Extraction ---
     raw_ocr_text: str
-    extracted_data: dict | None          # PurchaseOrder.model_dump()
+    extracted_data: dict | None  # PurchaseOrder.model_dump()
     field_confidences: dict[str, float]
     extraction_warnings: list[str]
 
@@ -30,7 +32,10 @@ class POWorkflowState(TypedDict, total=False):
     confirmation_email_sent: bool
     missing_info_email_sent: bool
     actions_log: list[str]
-    trajectory: list[str]                # node names visited
+    trajectory: list[str]  # node names visited
+
+    # --- Error handling ---
+    error_message: str | None
 
     # --- Final ---
-    final_status: str                    # "completed" | "missing_info" | "skipped" | "error"
+    final_status: str  # "completed" | "missing_info" | "skipped" | "error"

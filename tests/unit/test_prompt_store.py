@@ -6,7 +6,7 @@ import pytest
 from src.services.prompt_store.base import PromptStore, PromptTemplate
 from src.services.prompt_store.local import LocalPromptStore
 
-FIXTURES_DIR = Path(__file__).parent / "fixtures" / "prompts"
+FIXTURES_DIR = Path(__file__).parent.parent / "fixtures" / "prompts"
 
 
 class TestLocalPromptStore:
@@ -105,7 +105,7 @@ class TestLocalPromptStore:
         assert "body" in template.params
 
 
-REAL_PROMPTS_DIR = Path(__file__).parent.parent / "prompts"
+REAL_PROMPTS_DIR = Path(__file__).parent.parent.parent / "prompts"
 
 
 class TestRealPromptTemplates:

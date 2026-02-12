@@ -25,6 +25,7 @@ Thumbs.db
 # Environment
 .env
 .env.*
+!.env.example
 
 # uv
 uv.lock

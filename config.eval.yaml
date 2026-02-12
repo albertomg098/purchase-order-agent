@@ -1,10 +1,16 @@
 llm_provider: openai
 llm_model: gpt-4o-mini
+
 ocr_engine: tesseract
+
 tool_manager: mock
+
 prompt_store: local
 prompts_dir: prompts
 prompt_language: en
 prompt_fallback_language: en
+
 spreadsheet_id: test-sheet
+
+opik_workspace: alberto-martin
 opik_project: po-workflow-eval

@@ -16,6 +16,7 @@ dependencies = [
     "pytesseract>=0.3",
     "pdf2image>=1.17",
     "httpx>=0.27",
+    "pydantic-settings>=2.12.0",
 ]
 
 [project.optional-dependencies]
@@ -28,6 +29,10 @@ dev = [
 [tool.pytest.ini_options]
 testpaths = ["tests", "evals"]
 pythonpath = ["."]
+markers = [
+    "unit: fast isolated tests",
+    "integration: tests crossing service boundaries",
+]
 
 [tool.ruff]
 line-length = 120
