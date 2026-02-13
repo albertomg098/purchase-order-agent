@@ -118,7 +118,7 @@ def main():
         dataset_items.append(item)
     dataset.insert(dataset_items)
 
-    # Run evaluation
+    # Run evaluation (task_threads=1 because tasks share mutable mock_tools state)
     evaluate(
         dataset=dataset,
         task=build_eval_task(workflow, mock_tools),
@@ -134,6 +134,7 @@ def main():
             "llm_model": config.llm_model,
             "category": args.category or "all",
         },
+        task_threads=1,
     )
 
 
