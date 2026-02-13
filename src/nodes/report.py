@@ -6,4 +6,16 @@ class ReportNode(BaseNode):
     name = "report"
 
     def __call__(self, state: POWorkflowState) -> dict:
-        raise NotImplementedError("ReportNode will be implemented in Phase 2")
+        if state.get("error_message"):
+            final_status = "error"
+        elif not state.get("is_valid_po"):
+            final_status = "skipped"
+        elif state.get("missing_fields"):
+            final_status = "missing_info"
+        else:
+            final_status = "completed"
+
+        return {
+            "final_status": final_status,
+            "trajectory": state.get("trajectory", []) + ["report"],
+        }

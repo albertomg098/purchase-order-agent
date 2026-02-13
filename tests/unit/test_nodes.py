@@ -172,7 +172,9 @@ class TestReportNode:
         node = ReportNode()
         assert node is not None
 
-    def test_call_raises_not_implemented(self):
+    def test_call_is_implemented(self):
         node = ReportNode()
-        with pytest.raises(NotImplementedError):
+        try:
             node({})
+        except NotImplementedError:
+            pytest.fail("ReportNode should be implemented")
