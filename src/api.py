@@ -112,8 +112,6 @@ def create_app(config: AppConfig | None = None) -> FastAPI:
             payload = ComposioWebhookPayload(**raw)
         except (json.JSONDecodeError, Exception) as e:
             logger.error(f"Webhook payload validation failed: {e}")
-            logger.error(f"Raw payload keys: {list(raw.keys()) if 'raw' in dir() else 'parse error'}")
-            logger.error(f"Raw payload: {body.decode()[:2000]}")
             raise HTTPException(status_code=422, detail=str(e))
 
         message_id = payload.data.message_id
