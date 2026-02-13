@@ -85,10 +85,14 @@ class TestClassifyNode:
         assert node.llm is not None
         assert node.prompt_store is not None
 
-    def test_call_raises_not_implemented(self):
+    def test_call_is_implemented(self):
         node = ClassifyNode(llm=FakeLLM(), prompt_store=FakePromptStore())
-        with pytest.raises(NotImplementedError):
+        # ClassifyNode is now implemented (Phase 2) — verify it doesn't raise NotImplementedError
+        # It will error on missing prompt store data, but that's expected with FakePromptStore
+        try:
             node({})
+        except NotImplementedError:
+            pytest.fail("ClassifyNode should be implemented")
 
 
 class TestExtractNode:

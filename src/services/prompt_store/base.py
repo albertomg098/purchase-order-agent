@@ -81,6 +81,8 @@ class PromptStore(ABC):
             raise ValueError(
                 f"Missing required parameters for template '{template.name}': {missing}"
             )
+        if not template.params:
+            return template.template
         return template.template.format(**params)
 
     def get_and_render(
