@@ -67,7 +67,12 @@ class WorkflowBuilder:
         if self.config.tool_manager == "mock":
             return MockToolManager()
         if self.config.tool_manager == "composio":
-            raise NotImplementedError("ComposioToolManager is Phase 3")
+            from src.services.tools.composio import ComposioToolManager
+            return ComposioToolManager(
+                api_key=self.config.composio_api_key,
+                user_id=self.config.composio_user_id,
+                toolkit_versions=self.config.composio_toolkit_versions,
+            )
         raise ValueError(f"Unknown tool manager: {self.config.tool_manager}")
 
     def _build_prompt_store(self) -> PromptStore:

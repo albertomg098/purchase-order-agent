@@ -8,9 +8,11 @@ from src.builder import WorkflowBuilder
 from src.services.llm.openai import OpenAILLM
 from src.services.ocr.tesseract import TesseractOCR
 from src.services.tools.mock import MockToolManager
+from src.services.tools.composio import ComposioToolManager
 from src.services.prompt_store.local import LocalPromptStore
 
 MOCK_OPENAI = "src.services.llm.openai.OpenAI"
+MOCK_COMPOSIO = "src.services.tools.composio.Composio"
 
 
 class TestWorkflowBuilder:
@@ -106,3 +108,29 @@ class TestBuilderServiceCreation:
             builder = WorkflowBuilder(config)
             graph = builder.build()
         assert graph is not None
+
+    def test_composio_tool_manager_created(self):
+        with patch(MOCK_OPENAI), patch(MOCK_COMPOSIO):
+            config = AppConfig(
+                tool_manager="composio",
+                composio_api_key="test-key",
+                composio_user_id="entity-123",
+                composio_toolkit_versions={"gmail": "20251027_00"},
+            )
+            builder = WorkflowBuilder(config)
+        assert isinstance(builder._tool_manager, ComposioToolManager)
+
+    def test_composio_tool_manager_receives_config_params(self):
+        with patch(MOCK_OPENAI), patch(MOCK_COMPOSIO) as mock_cls:
+            config = AppConfig(
+                tool_manager="composio",
+                composio_api_key="test-key",
+                composio_user_id="entity-123",
+                composio_toolkit_versions={"gmail": "20251027_00", "googlesheets": "20251027_00"},
+            )
+            builder = WorkflowBuilder(config)
+        mock_cls.assert_called_once_with(
+            api_key="test-key",
+            toolkit_versions={"gmail": "20251027_00", "googlesheets": "20251027_00"},
+        )
+        assert builder._tool_manager._user_id == "entity-123"
