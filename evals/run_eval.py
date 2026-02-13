@@ -10,6 +10,7 @@ import json
 import argparse
 from pathlib import Path
 
+import opik
 from opik import Opik
 from opik.evaluation import evaluate
 
@@ -42,6 +43,7 @@ def load_scenarios(category: str | None = None) -> list[dict]:
 def build_eval_task(workflow, mock_tools):
     """Build the task function that opik.evaluate() will call for each scenario."""
 
+    @opik.track(name="po_workflow")
     def eval_task(scenario: dict) -> dict:
         mock_tools.reset()
 

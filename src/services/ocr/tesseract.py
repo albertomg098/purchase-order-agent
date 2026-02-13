@@ -1,3 +1,4 @@
+import opik
 import pytesseract
 from pdf2image import convert_from_bytes
 from PIL import Image
@@ -15,6 +16,7 @@ class TesseractOCR(OCRService):
         self._lang = lang
         self._dpi = dpi
 
+    @opik.track(name="ocr_extract_text")
     def extract_text(self, pdf_bytes: bytes) -> str:
         images: list[Image.Image] = convert_from_bytes(pdf_bytes, dpi=self._dpi)
         texts = []

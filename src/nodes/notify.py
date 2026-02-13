@@ -1,3 +1,5 @@
+import opik
+
 from src.nodes.base import BaseNode
 from src.services.llm.base import LLMService
 from src.services.tools.base import ToolManager
@@ -13,6 +15,7 @@ class NotifyNode(BaseNode):
         self.tools = tools
         self.prompt_store = prompt_store
 
+    @opik.track(name="notify_node")
     def __call__(self, state: POWorkflowState) -> dict:
         if state.get("final_status") == "error":
             return {"trajectory": state.get("trajectory", []) + ["notify"]}

@@ -1,3 +1,5 @@
+import opik
+
 from src.nodes.base import BaseNode
 from src.core.workflow_state import POWorkflowState
 
@@ -13,6 +15,7 @@ class ValidateNode(BaseNode):
     def __init__(self, confidence_threshold: float = 0.5):
         self.confidence_threshold = confidence_threshold
 
+    @opik.track(name="validate_node")
     def __call__(self, state: POWorkflowState) -> dict:
         if state.get("final_status") == "error":
             return {"trajectory": state.get("trajectory", []) + ["validate"]}

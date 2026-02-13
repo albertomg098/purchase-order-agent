@@ -1,3 +1,4 @@
+import opik
 from openai import OpenAI
 
 from src.services.llm.base import LLMService, T
@@ -10,6 +11,7 @@ class OpenAILLM(LLMService):
         self._model = model
         self._client = OpenAI(base_url=base_url, api_key=api_key)
 
+    @opik.track(name="llm_structured_output")
     def structured_output(self, messages: list[dict], response_model: type[T]) -> T:
         completion = self._client.beta.chat.completions.parse(
             model=self._model,
@@ -21,6 +23,7 @@ class OpenAILLM(LLMService):
             raise ValueError(f"LLM refused to respond or failed to parse into {response_model.__name__}")
         return result
 
+    @opik.track(name="llm_generate_text")
     def generate_text(self, messages: list[dict]) -> str:
         completion = self._client.chat.completions.create(
             model=self._model,

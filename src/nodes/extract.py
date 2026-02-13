@@ -1,3 +1,5 @@
+import opik
+
 from src.nodes.base import BaseNode
 from src.services.ocr.base import OCRService
 from src.services.llm.base import LLMService
@@ -14,6 +16,7 @@ class ExtractNode(BaseNode):
         self.llm = llm
         self.prompt_store = prompt_store
 
+    @opik.track(name="extract_node")
     def __call__(self, state: POWorkflowState) -> dict:
         if state.get("final_status") == "error":
             return {"trajectory": state.get("trajectory", []) + ["extract"]}

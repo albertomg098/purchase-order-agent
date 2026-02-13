@@ -1,3 +1,5 @@
+import opik
+
 from src.nodes.base import BaseNode
 from src.services.tools.base import ToolManager
 from src.core.workflow_state import POWorkflowState
@@ -10,6 +12,7 @@ class TrackNode(BaseNode):
         self.tools = tools
         self.spreadsheet_id = spreadsheet_id
 
+    @opik.track(name="track_node")
     def __call__(self, state: POWorkflowState) -> dict:
         if state.get("final_status") == "error":
             return {"trajectory": state.get("trajectory", []) + ["track"]}
