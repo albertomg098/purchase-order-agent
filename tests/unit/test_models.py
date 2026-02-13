@@ -6,7 +6,7 @@ from pydantic import ValidationError
 
 from src.core.purchase_order import PurchaseOrder, ExtractionResult
 from src.core.webhook import WebhookPayload
-from src.core.llm_responses import ClassificationResult, LLMExtractionResponse
+from src.core.llm_responses import ClassificationResult, LLMExtractionResponse, ExtractionData, ExtractionConfidences
 
 
 # --- PurchaseOrder ---
@@ -175,43 +175,56 @@ class TestClassificationResult:
 class TestLLMExtractionResponse:
     def test_creates_with_full_data(self):
         result = LLMExtractionResponse(
-            data={
-                "order_id": "PO-2025-001",
-                "customer": "Acme Corp",
-                "pickup_location": "Warehouse A",
-                "delivery_location": "Retail Hub B",
-                "delivery_datetime": "2025-01-18T08:00:00",
-                "driver_name": "Juan Pérez",
-                "driver_phone": "+34 600 123 456",
-            },
-            field_confidences={
-                "order_id": 0.95,
-                "customer": 0.90,
-                "pickup_location": 0.85,
-                "delivery_location": 0.80,
-                "delivery_datetime": 0.75,
-                "driver_name": 0.70,
-                "driver_phone": 0.65,
-            },
+            data=ExtractionData(
+                order_id="PO-2025-001",
+                customer="Acme Corp",
+                pickup_location="Warehouse A",
+                delivery_location="Retail Hub B",
+                delivery_datetime="2025-01-18T08:00:00",
+                driver_name="Juan Pérez",
+                driver_phone="+34 600 123 456",
+            ),
+            field_confidences=ExtractionConfidences(
+                order_id=0.95,
+                customer=0.90,
+                pickup_location=0.85,
+                delivery_location=0.80,
+                delivery_datetime=0.75,
+                driver_name=0.70,
+                driver_phone=0.65,
+            ),
             warnings=["Low confidence on driver_phone"],
         )
-        assert result.data["order_id"] == "PO-2025-001"
-        assert result.field_confidences["order_id"] == 0.95
+        assert result.data.order_id == "PO-2025-001"
+        assert result.field_confidences.order_id == 0.95
         assert len(result.warnings) == 1
 
     def test_data_allows_none_values(self):
-        result = LLMExtractionResponse(
-            data={"order_id": "PO-001", "customer": None},
-            field_confidences={"order_id": 0.9, "customer": 0.1},
+        data = ExtractionData(
+            order_id="PO-001", customer=None, pickup_location=None,
+            delivery_location=None, delivery_datetime=None,
+            driver_name=None, driver_phone=None,
         )
-        assert result.data["customer"] is None
+        result = LLMExtractionResponse(
+            data=data,
+            field_confidences=ExtractionConfidences(
+                order_id=0.9, customer=0.1, pickup_location=0.0,
+                delivery_location=0.0, delivery_datetime=0.0,
+                driver_name=0.0, driver_phone=0.0,
+            ),
+            warnings=[],
+        )
+        assert result.data.customer is None
 
-    def test_warnings_defaults_to_empty_list(self):
-        result = LLMExtractionResponse(
-            data={"order_id": "PO-001"},
-            field_confidences={"order_id": 0.9},
+    def test_model_dump_produces_dicts(self):
+        data = ExtractionData(
+            order_id="PO-001", customer="Acme", pickup_location="A",
+            delivery_location="B", delivery_datetime="2025-01-01",
+            driver_name="Juan", driver_phone="+34 600",
         )
-        assert result.warnings == []
+        dumped = data.model_dump()
+        assert isinstance(dumped, dict)
+        assert dumped["order_id"] == "PO-001"
 
     def test_requires_data_and_field_confidences(self):
         with pytest.raises(ValidationError):

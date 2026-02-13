@@ -1,6 +1,6 @@
 """Unit tests for ExtractNode."""
 from src.nodes.extract import ExtractNode
-from src.core.llm_responses import LLMExtractionResponse
+from src.core.llm_responses import LLMExtractionResponse, ExtractionData, ExtractionConfidences
 from src.services.prompt_store.local import LocalPromptStore
 from tests.mocks import MockLLM, MockOCR
 
@@ -26,6 +26,14 @@ FULL_CONFIDENCES = {
 }
 
 
+def _build_response(data=None, confidences=None, warnings=None):
+    return LLMExtractionResponse(
+        data=ExtractionData(**(data or FULL_DATA)),
+        field_confidences=ExtractionConfidences(**(confidences or FULL_CONFIDENCES)),
+        warnings=warnings or [],
+    )
+
+
 def _make_node(ocr_text="OCR output text", llm_response=None, ocr_raise=None, llm_raise=None):
     ocr = MockOCR(text=ocr_text, should_raise=ocr_raise)
     llm = MockLLM(structured_response=llm_response, should_raise=llm_raise)
@@ -42,11 +50,7 @@ def _valid_state(pdf_bytes=b"fake-pdf"):
 
 class TestExtractNodeHappyPath:
     def test_full_extraction(self):
-        response = LLMExtractionResponse(
-            data=FULL_DATA,
-            field_confidences=FULL_CONFIDENCES,
-            warnings=["Minor OCR artifact"],
-        )
+        response = _build_response(warnings=["Minor OCR artifact"])
         node = _make_node(ocr_text="Purchase Order PO-2025-001...", llm_response=response)
 
         result = node(_valid_state())
@@ -58,10 +62,7 @@ class TestExtractNodeHappyPath:
     def test_partial_extraction(self):
         partial_data = {**FULL_DATA, "driver_phone": None}
         partial_conf = {**FULL_CONFIDENCES, "driver_phone": 0.0}
-        response = LLMExtractionResponse(
-            data=partial_data,
-            field_confidences=partial_conf,
-        )
+        response = _build_response(data=partial_data, confidences=partial_conf)
         node = _make_node(llm_response=response)
 
         result = node(_valid_state())
@@ -70,7 +71,7 @@ class TestExtractNodeHappyPath:
         assert result["field_confidences"]["driver_phone"] == 0.0
 
     def test_stores_raw_ocr_text(self):
-        response = LLMExtractionResponse(data=FULL_DATA, field_confidences=FULL_CONFIDENCES)
+        response = _build_response()
         node = _make_node(ocr_text="Raw OCR content here", llm_response=response)
 
         result = node(_valid_state())
@@ -78,7 +79,7 @@ class TestExtractNodeHappyPath:
         assert result["raw_ocr_text"] == "Raw OCR content here"
 
     def test_trajectory_updated(self):
-        response = LLMExtractionResponse(data=FULL_DATA, field_confidences=FULL_CONFIDENCES)
+        response = _build_response()
         node = _make_node(llm_response=response)
 
         result = node(_valid_state())
@@ -86,7 +87,7 @@ class TestExtractNodeHappyPath:
         assert "extract" in result["trajectory"]
 
     def test_trajectory_appends_to_existing(self):
-        response = LLMExtractionResponse(data=FULL_DATA, field_confidences=FULL_CONFIDENCES)
+        response = _build_response()
         node = _make_node(llm_response=response)
         state = {**_valid_state(), "trajectory": ["classify"]}
 
@@ -97,7 +98,7 @@ class TestExtractNodeHappyPath:
 
 class TestExtractNodeSkip:
     def test_skips_when_not_valid_po(self):
-        response = LLMExtractionResponse(data=FULL_DATA, field_confidences=FULL_CONFIDENCES)
+        response = _build_response()
         node = _make_node(llm_response=response)
         state = {"is_valid_po": False, "trajectory": ["classify"]}
 
@@ -128,7 +129,7 @@ class TestExtractNodeErrorHandling:
         assert "API timeout" in result["error_message"]
 
     def test_error_guard_passes_through(self):
-        response = LLMExtractionResponse(data=FULL_DATA, field_confidences=FULL_CONFIDENCES)
+        response = _build_response()
         node = _make_node(llm_response=response)
         state = {
             **_valid_state(),

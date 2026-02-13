@@ -41,8 +41,8 @@ class ExtractNode(BaseNode):
 
             return {
                 "raw_ocr_text": raw_text,
-                "extracted_data": result.data,
-                "field_confidences": result.field_confidences,
+                "extracted_data": result.data.model_dump(),
+                "field_confidences": result.field_confidences.model_dump(),
                 "extraction_warnings": result.warnings,
                 "trajectory": state.get("trajectory", []) + ["extract"],
             }
