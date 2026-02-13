@@ -4,6 +4,9 @@ llm_model: gpt-4o-mini
 ocr_engine: tesseract
 
 tool_manager: composio
+composio_toolkit_versions:
+  gmail: "20251027_00"
+  googlesheets: "20251027_00"
 
 prompt_store: local
 prompts_dir: prompts

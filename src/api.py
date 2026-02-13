@@ -27,9 +27,13 @@ def create_app(config: AppConfig | None = None) -> FastAPI:
         webhook_data = parse_composio_webhook(payload)
 
         # Fetch full message (webhook snippet may be truncated)
-        full_message = tool_manager.get_email_message(
-            message_id=webhook_data.message_id,
-        )
+        try:
+            full_message = tool_manager.get_email_message(
+                message_id=webhook_data.message_id,
+            )
+        except Exception:
+            logger.warning(f"Failed to fetch full message {webhook_data.message_id}, using webhook data")
+            full_message = {}
         email_body = full_message.get("messageText", webhook_data.body)
         email_subject = full_message.get("subject", webhook_data.subject)
         email_sender = full_message.get("sender", webhook_data.sender)
@@ -37,10 +41,13 @@ def create_app(config: AppConfig | None = None) -> FastAPI:
         # Fetch PDF attachment if present
         pdf_bytes = None
         if webhook_data.has_attachment:
-            pdf_bytes = tool_manager.get_email_attachment(
-                message_id=webhook_data.message_id,
-                attachment_id=webhook_data.attachment_ids[0],
-            )
+            try:
+                pdf_bytes = tool_manager.get_email_attachment(
+                    message_id=webhook_data.message_id,
+                    attachment_id=webhook_data.attachment_ids[0],
+                )
+            except Exception:
+                logger.warning(f"Failed to fetch attachment from {webhook_data.message_id}")
 
         # Build workflow input state
         input_state = {
