@@ -31,11 +31,12 @@ system:
 
 user:
     template: |
-        Extract purchase order data from the following OCR text:
+        Extract purchase order data from the following OCR text.
+        First, mentally identify and correct any OCR errors, then extract the fields.
 
-        ---
+        <ocr_text>
         {ocr_text}
-        ---
+        </ocr_text>
     description: User prompt with OCR text for extraction
     params:
         - ocr_text

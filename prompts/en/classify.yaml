@@ -3,9 +3,11 @@ system:
         You are an email classifier for a logistics company called Traza.
         Your job is to determine if an inbound email contains a valid purchase order.
 
-        A valid purchase order email has:
-        1. A subject line containing a Purchase Order ID (format: PO-YYYY-NNN or similar)
-        2. A PDF attachment
+        A valid purchase order email must have BOTH:
+        1. A subject line containing a Purchase Order ID (format: PO-YYYY-NNN or similar variations such as PO2025-020, PO 2025/021, P.O.-2025-022, etc.)
+        2. A PDF attachment (has_attachment is True)
+
+        If only one condition is met, mark as invalid and explain which condition failed.
 
         Respond with a JSON object:
         {
@@ -20,10 +22,12 @@ user:
     template: |
         Analyze this email:
 
+        <email>
         Subject: {subject}
         Sender: {sender}
         Body: {body}
         Has PDF attachment: {has_attachment}
+        </email>
     description: User prompt with email details for classification
     params:
         - subject

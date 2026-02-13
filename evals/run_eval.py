@@ -108,7 +108,12 @@ def main():
     scenarios = load_scenarios(args.category)
     client = Opik()
     dataset_name = f"po-scenarios-{args.category}" if args.category else "po-scenarios-all"
-    dataset = client.get_or_create_dataset(dataset_name)
+    # Delete existing dataset to avoid accumulating stale items across runs
+    try:
+        client.delete_dataset(dataset_name)
+    except Exception:
+        pass
+    dataset = client.create_dataset(dataset_name)
 
     # Opik requires 'id' to be a UUID; rename our string ids to 'scenario_id'
     dataset_items = []

@@ -25,7 +25,7 @@
           "driver_phone": "+34 6..."
         },
         "missing_fields": ["driver_phone"],
-        "expected_trajectory": ["classify", "extract", "validate", "notify", "report"],
+        "expected_trajectory": ["classify", "extract", "validate", "track", "notify", "report"],
         "final_status": "missing_info",
         "expected_sheet_update": false,
         "expected_confirmation_email": false,

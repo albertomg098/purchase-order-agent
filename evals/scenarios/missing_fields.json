@@ -25,7 +25,7 @@
           "driver_phone": null
         },
         "missing_fields": ["driver_phone"],
-        "expected_trajectory": ["classify", "extract", "validate", "notify", "report"],
+        "expected_trajectory": ["classify", "extract", "validate", "track", "notify", "report"],
         "final_status": "missing_info",
         "expected_sheet_update": false,
         "expected_confirmation_email": false,
@@ -57,7 +57,7 @@
           "driver_phone": null
         },
         "missing_fields": ["driver_name", "driver_phone"],
-        "expected_trajectory": ["classify", "extract", "validate", "notify", "report"],
+        "expected_trajectory": ["classify", "extract", "validate", "track", "notify", "report"],
         "final_status": "missing_info",
         "expected_sheet_update": false,
         "expected_confirmation_email": false,
@@ -89,7 +89,7 @@
           "driver_phone": "+34 622 345 678"
         },
         "missing_fields": ["delivery_datetime"],
-        "expected_trajectory": ["classify", "extract", "validate", "notify", "report"],
+        "expected_trajectory": ["classify", "extract", "validate", "track", "notify", "report"],
         "final_status": "missing_info",
         "expected_sheet_update": false,
         "expected_confirmation_email": false,
@@ -121,7 +121,7 @@
           "driver_phone": "+34 655 777 888"
         },
         "missing_fields": ["pickup_location"],
-        "expected_trajectory": ["classify", "extract", "validate", "notify", "report"],
+        "expected_trajectory": ["classify", "extract", "validate", "track", "notify", "report"],
         "final_status": "missing_info",
         "expected_sheet_update": false,
         "expected_confirmation_email": false,
@@ -153,7 +153,7 @@
           "driver_phone": "+34 666 999 000"
         },
         "missing_fields": ["customer"],
-        "expected_trajectory": ["classify", "extract", "validate", "notify", "report"],
+        "expected_trajectory": ["classify", "extract", "validate", "track", "notify", "report"],
         "final_status": "missing_info",
         "expected_sheet_update": false,
         "expected_confirmation_email": false,

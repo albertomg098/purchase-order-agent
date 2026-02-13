@@ -2,20 +2,22 @@ confirmation:
     template: |
         Write a confirmation email for this purchase order.
 
-        Order details:
-        - Order ID: {order_id}
-        - Customer: {customer}
-        - Pickup: {pickup_location}
-        - Delivery: {delivery_location}
-        - Delivery Date: {delivery_datetime}
-        - Driver: {driver_name}
+        <order_details>
+        Order ID: {order_id}
+        Customer: {customer}
+        Pickup: {pickup_location}
+        Delivery: {delivery_location}
+        Delivery Date: {delivery_datetime}
+        Driver: {driver_name}
+        </order_details>
 
-        Requirements for the email:
-        1. Start by confirming that order {order_id} has been received and is being processed.
-        2. Address the customer by name ({customer}).
+        Requirements:
+        1. Address the customer by name ({customer}).
+        2. Confirm that order {order_id} has been received and is being processed.
         3. Summarize the key order details (pickup, delivery, date, driver).
         4. Use words like "received", "confirmed", or "processing" to reassure the customer.
         5. Keep it professional, concise, and under 200 words.
+        6. Do not include a subject line — only the email body.
     description: Template for generating PO confirmation emails
     params:
         - order_id
@@ -27,12 +29,20 @@ confirmation:
 
 missing_info:
     template: |
-        Write a professional email requesting missing information for purchase order {order_id}.
+        Write a professional email requesting missing information for a purchase order.
 
-        The following fields are missing or unclear:
-        {missing_fields_description}
+        <order_context>
+        Order ID: {order_id}
+        Missing fields: {missing_fields_description}
+        </order_context>
 
-        Ask the sender to provide the missing information so we can process the order.
+        Requirements:
+        1. Reference the order ID ({order_id}) in the opening.
+        2. Clearly list each missing field and ask the sender to provide them.
+        3. Explain that we need this information to process the order.
+        4. Keep the tone professional and helpful, not demanding.
+        5. Keep it under 150 words.
+        6. Do not include a subject line — only the email body.
     description: Template for requesting missing PO information
     params:
         - order_id
@@ -42,7 +52,12 @@ system:
     template: |
         You are a professional logistics coordinator at Traza.
         Write email replies to customers about their purchase orders.
-        Be professional, concise, and helpful. Use a friendly business tone.
-        Include relevant order details in the email.
+
+        Guidelines:
+        - Write in English.
+        - Be professional, concise, and helpful. Use a friendly business tone.
+        - Include relevant order details in the email.
+        - Do not use markdown formatting — write plain text suitable for email.
+        - Sign off as "Traza Logistics Team".
     description: System prompt for email generation
     params: []
