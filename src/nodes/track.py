@@ -11,4 +11,37 @@ class TrackNode(BaseNode):
         self.spreadsheet_id = spreadsheet_id
 
     def __call__(self, state: POWorkflowState) -> dict:
-        raise NotImplementedError("TrackNode will be implemented in Phase 2")
+        if state.get("final_status") == "error":
+            return {"trajectory": state.get("trajectory", []) + ["track"]}
+
+        if not state.get("is_valid_po"):
+            return {"trajectory": state.get("trajectory", []) + ["track"]}
+
+        try:
+            extracted_data = state.get("extracted_data") or {}
+            missing_fields = state.get("missing_fields", [])
+            row_status = "complete" if not missing_fields else "pending_info"
+
+            values = [
+                state.get("po_id", ""),
+                extracted_data.get("customer", ""),
+                extracted_data.get("pickup_location", ""),
+                extracted_data.get("delivery_location", ""),
+                extracted_data.get("delivery_datetime", ""),
+                extracted_data.get("driver_name", ""),
+                extracted_data.get("driver_phone", ""),
+                row_status,
+            ]
+
+            self.tools.append_sheet_row(self.spreadsheet_id, values)
+
+            return {
+                "sheet_row_added": True,
+                "trajectory": state.get("trajectory", []) + ["track"],
+            }
+        except Exception as e:
+            return {
+                "final_status": "error",
+                "error_message": f"TrackNode failed: {e}",
+                "trajectory": state.get("trajectory", []) + ["track"],
+            }

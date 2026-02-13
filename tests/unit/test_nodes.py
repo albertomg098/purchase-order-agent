@@ -138,10 +138,12 @@ class TestTrackNode:
         assert node.tools is not None
         assert node.spreadsheet_id == "sheet_123"
 
-    def test_call_raises_not_implemented(self):
+    def test_call_is_implemented(self):
         node = TrackNode(tools=FakeToolManager(), spreadsheet_id="sheet_123")
-        with pytest.raises(NotImplementedError):
+        try:
             node({})
+        except NotImplementedError:
+            pytest.fail("TrackNode should be implemented")
 
 
 class TestNotifyNode:
