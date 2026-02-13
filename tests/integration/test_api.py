@@ -1,4 +1,5 @@
 """Integration tests for FastAPI webhook endpoint."""
+import base64
 import hashlib
 import hmac
 import json
@@ -13,10 +14,12 @@ from src.config import AppConfig
 from src.services.tools.mock import MockToolManager
 
 
-# Real Composio TriggerEvent format
+# Real Composio V3 webhook format: metadata + data envelope
 VALID_WEBHOOK_PAYLOAD = {
-    "trigger_slug": "GMAIL_NEW_GMAIL_MESSAGE",
-    "payload": {
+    "metadata": {
+        "trigger_slug": "GMAIL_NEW_GMAIL_MESSAGE",
+    },
+    "data": {
         "message_id": "msg-123",
         "thread_id": "thread-456",
         "subject": "PO-2024-001",
@@ -29,7 +32,7 @@ VALID_WEBHOOK_PAYLOAD = {
 }
 
 PAYLOAD_NO_ATTACHMENT = {
-    "payload": {
+    "data": {
         "message_id": "msg-no-att",
         "subject": "Question about order",
         "sender": "user@test.com",
@@ -89,14 +92,14 @@ def secure_client(mock_workflow, mock_tools, monkeypatch):
 
 
 def _sign_payload(payload_dict: dict, secret: str) -> dict:
-    """Generate Composio-style webhook signature headers."""
+    """Generate Composio-style webhook signature headers (base64-encoded HMAC-SHA256)."""
     body = json.dumps(payload_dict)
     msg_id = "msg_test123"
     timestamp = str(int(time.time()))
     to_sign = f"{msg_id}.{timestamp}.{body}"
-    signature = hmac.new(
-        secret.encode(), to_sign.encode(), hashlib.sha256
-    ).hexdigest()
+    signature = base64.b64encode(
+        hmac.new(secret.encode(), to_sign.encode(), hashlib.sha256).digest()
+    ).decode()
     return {
         "webhook-id": msg_id,
         "webhook-timestamp": timestamp,

@@ -12,7 +12,7 @@ class WebhookPayload(BaseModel):
     thread_id: str | None = None
 
 
-# --- Composio TriggerEvent Pydantic models ---
+# --- Composio V3 webhook Pydantic models ---
 
 
 class ComposioGmailAttachment(BaseModel):
@@ -30,22 +30,26 @@ class ComposioGmailData(BaseModel):
     attachment_list: list[ComposioGmailAttachment] = []
 
 
-class ComposioWebhookPayload(BaseModel):
-    """Pydantic model for validating Composio TriggerEvent webhook payload.
+class ComposioWebhookMetadata(BaseModel):
+    trigger_slug: str | None = None
 
-    Composio sends a TriggerEvent envelope with trigger metadata and the
-    Gmail-specific data nested in the `payload` field.
+
+class ComposioWebhookPayload(BaseModel):
+    """Pydantic model for validating Composio V3 webhook payload.
+
+    Composio sends a V3 envelope with metadata (trigger_slug) and the
+    Gmail-specific data nested in the `data` field.
 
     If the real payload differs from this model, FastAPI returns 422
     with the exact validation error — making debugging trivial.
     """
-    trigger_slug: str | None = None
-    payload: ComposioGmailData
+    metadata: ComposioWebhookMetadata | None = None
+    data: ComposioGmailData
 
 
 def parse_composio_webhook(payload: ComposioWebhookPayload) -> WebhookPayload:
     """Convert a validated Composio webhook payload into our domain model."""
-    data = payload.payload
+    data = payload.data
     attachments = data.attachment_list
     return WebhookPayload(
         message_id=data.message_id,

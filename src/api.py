@@ -1,3 +1,4 @@
+import base64
 import hashlib
 import hmac
 import json
@@ -23,9 +24,11 @@ def _verify_signature(body: bytes, secret: str, headers: dict[str, str]) -> None
         raise HTTPException(status_code=401, detail="Missing webhook signature headers")
 
     to_sign = f"{webhook_id}.{timestamp}.{body.decode()}"
-    expected = hmac.new(secret.encode(), to_sign.encode(), hashlib.sha256).hexdigest()
+    expected = base64.b64encode(
+        hmac.new(secret.encode(), to_sign.encode(), hashlib.sha256).digest()
+    ).decode()
 
-    # signature_header format: "v1,<hex_signature>"
+    # signature_header format: "v1,<base64_signature>"
     parts = signature_header.split(",", 1)
     if len(parts) != 2:
         raise HTTPException(status_code=401, detail="Invalid signature format")
@@ -107,9 +110,9 @@ def create_app(config: AppConfig | None = None) -> FastAPI:
         except (json.JSONDecodeError, Exception) as e:
             raise HTTPException(status_code=422, detail=str(e))
 
-        logger.info(f"Webhook received: message_id={payload.payload.message_id}")
+        logger.info(f"Webhook received: message_id={payload.data.message_id}")
         background_tasks.add_task(process_email, payload)
-        return {"status": "accepted", "message_id": payload.payload.message_id}
+        return {"status": "accepted", "message_id": payload.data.message_id}
 
     @app.get("/health")
     async def health():

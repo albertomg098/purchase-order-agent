@@ -14,10 +14,12 @@ from src.core.webhook import (
 )
 
 
-# Real Composio TriggerEvent format
+# Real Composio V3 webhook format: metadata + data envelope
 VALID_PAYLOAD = {
-    "trigger_slug": "GMAIL_NEW_GMAIL_MESSAGE",
-    "payload": {
+    "metadata": {
+        "trigger_slug": "GMAIL_NEW_GMAIL_MESSAGE",
+    },
+    "data": {
         "message_id": "msg-123",
         "thread_id": "thread-456",
         "subject": "PO-2024-001 Order",
@@ -33,46 +35,46 @@ VALID_PAYLOAD = {
 class TestComposioWebhookPayloadValidation:
     def test_validates_correct_payload(self):
         payload = ComposioWebhookPayload(**VALID_PAYLOAD)
-        assert payload.payload.message_id == "msg-123"
-        assert payload.trigger_slug == "GMAIL_NEW_GMAIL_MESSAGE"
+        assert payload.data.message_id == "msg-123"
+        assert payload.metadata.trigger_slug == "GMAIL_NEW_GMAIL_MESSAGE"
 
     def test_rejects_missing_message_id(self):
         bad_payload = {
-            "payload": {
+            "data": {
                 "subject": "Test",
             }
         }
         with pytest.raises(ValidationError):
             ComposioWebhookPayload(**bad_payload)
 
-    def test_rejects_missing_payload(self):
+    def test_rejects_missing_data(self):
         with pytest.raises(ValidationError):
             ComposioWebhookPayload()
 
     def test_optional_fields_default_gracefully(self):
         minimal_payload = {
-            "payload": {
+            "data": {
                 "message_id": "msg-minimal",
             }
         }
         payload = ComposioWebhookPayload(**minimal_payload)
-        assert payload.payload.message_id == "msg-minimal"
-        assert payload.payload.thread_id is None
-        assert payload.payload.subject == ""
-        assert payload.payload.sender == ""
-        assert payload.payload.message_text == ""
-        assert payload.payload.attachment_list == []
-        assert payload.trigger_slug is None
+        assert payload.data.message_id == "msg-minimal"
+        assert payload.data.thread_id is None
+        assert payload.data.subject == ""
+        assert payload.data.sender == ""
+        assert payload.data.message_text == ""
+        assert payload.data.attachment_list == []
+        assert payload.metadata is None
 
     def test_parses_attachments(self):
         payload = ComposioWebhookPayload(**VALID_PAYLOAD)
-        assert len(payload.payload.attachment_list) == 1
-        assert payload.payload.attachment_list[0].id == "att-789"
-        assert payload.payload.attachment_list[0].name == "po.pdf"
+        assert len(payload.data.attachment_list) == 1
+        assert payload.data.attachment_list[0].id == "att-789"
+        assert payload.data.attachment_list[0].name == "po.pdf"
 
     def test_multiple_attachments(self):
         multi = {
-            "payload": {
+            "data": {
                 "message_id": "msg-multi",
                 "attachment_list": [
                     {"id": "att-1", "name": "po1.pdf", "mimeType": "application/pdf"},
@@ -82,8 +84,8 @@ class TestComposioWebhookPayloadValidation:
             }
         }
         payload = ComposioWebhookPayload(**multi)
-        assert len(payload.payload.attachment_list) == 3
-        assert payload.payload.attachment_list[2].name is None
+        assert len(payload.data.attachment_list) == 3
+        assert payload.data.attachment_list[2].name is None
 
 
 class TestParseComposioWebhook:
@@ -102,7 +104,7 @@ class TestParseComposioWebhook:
 
     def test_no_attachments(self):
         no_att = {
-            "payload": {
+            "data": {
                 "message_id": "msg-no-att",
                 "subject": "Question",
                 "sender": "user@test.com",
@@ -117,7 +119,7 @@ class TestParseComposioWebhook:
 
     def test_no_thread_id(self):
         no_thread = {
-            "payload": {
+            "data": {
                 "message_id": "msg-no-thread",
             }
         }
@@ -128,7 +130,7 @@ class TestParseComposioWebhook:
 
     def test_extracts_multiple_attachment_ids(self):
         multi = {
-            "payload": {
+            "data": {
                 "message_id": "msg-multi",
                 "attachment_list": [
                     {"id": "att-1"},
