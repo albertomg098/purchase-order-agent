@@ -1,0 +1,11 @@
+.git
+.env
+.venv
+__pycache__
+*.pyc
+tests/
+evals/
+*.md
+phase*_spec.md
+scripts/
+.ruff_cache

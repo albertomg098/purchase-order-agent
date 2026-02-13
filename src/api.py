@@ -78,3 +78,7 @@ def create_app(config: AppConfig | None = None) -> FastAPI:
         return {"status": "ok"}
 
     return app
+
+
+# Module-level app instance for uvicorn (CMD: uvicorn src.api:app)
+app = create_app()
