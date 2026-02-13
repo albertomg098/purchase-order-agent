@@ -47,6 +47,7 @@ def create_app(config: AppConfig | None = None) -> FastAPI:
     workflow = builder.build()
     tool_manager = builder.tool_manager
     webhook_secret = config.composio_webhook_secret
+    seen_message_ids: set[str] = set()
 
     app = FastAPI(title="PO Agent")
 
@@ -115,9 +116,17 @@ def create_app(config: AppConfig | None = None) -> FastAPI:
             logger.error(f"Raw payload: {body.decode()[:2000]}")
             raise HTTPException(status_code=422, detail=str(e))
 
-        logger.info(f"Webhook received: message_id={payload.data.message_id}")
+        message_id = payload.data.message_id
+
+        # Deduplicate — Composio may send the same webhook multiple times
+        if message_id in seen_message_ids:
+            logger.info(f"Webhook duplicate, skipping: message_id={message_id}")
+            return {"status": "duplicate", "message_id": message_id}
+
+        seen_message_ids.add(message_id)
+        logger.info(f"Webhook received: message_id={message_id}")
         background_tasks.add_task(process_email, payload)
-        return {"status": "accepted", "message_id": payload.data.message_id}
+        return {"status": "accepted", "message_id": message_id}
 
     @app.get("/health")
     async def health():

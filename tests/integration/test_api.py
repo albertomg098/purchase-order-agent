@@ -130,6 +130,15 @@ class TestWebhookEndpoint:
         response = client.post("/webhook/email", json={})
         assert response.status_code == 422
 
+    def test_duplicate_message_id_returns_duplicate(self, client):
+        """Composio may send the same webhook multiple times; second should be deduped."""
+        first = client.post("/webhook/email", json=VALID_WEBHOOK_PAYLOAD)
+        assert first.json()["status"] == "accepted"
+
+        second = client.post("/webhook/email", json=VALID_WEBHOOK_PAYLOAD)
+        assert second.status_code == 202
+        assert second.json()["status"] == "duplicate"
+
 
 class TestWebhookVerification:
     def test_no_secret_configured_skips_verification(self, client):
