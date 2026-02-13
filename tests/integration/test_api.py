@@ -26,7 +26,7 @@ VALID_WEBHOOK_PAYLOAD = {
         "sender": "customer@example.com",
         "message_text": "Please find attached...",
         "attachment_list": [
-            {"id": "att-789", "name": "po.pdf", "mimeType": "application/pdf"},
+            {"attachmentId": "att-789", "filename": "po.pdf", "mimeType": "application/pdf"},
         ],
     },
 }

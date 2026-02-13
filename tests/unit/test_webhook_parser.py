@@ -26,7 +26,7 @@ VALID_PAYLOAD = {
         "sender": "customer@example.com",
         "message_text": "Please find attached our purchase order...",
         "attachment_list": [
-            {"id": "att-789", "name": "po.pdf", "mimeType": "application/pdf"},
+            {"attachmentId": "att-789", "filename": "po.pdf", "mimeType": "application/pdf"},
         ],
     },
 }
@@ -69,23 +69,23 @@ class TestComposioWebhookPayloadValidation:
     def test_parses_attachments(self):
         payload = ComposioWebhookPayload(**VALID_PAYLOAD)
         assert len(payload.data.attachment_list) == 1
-        assert payload.data.attachment_list[0].id == "att-789"
-        assert payload.data.attachment_list[0].name == "po.pdf"
+        assert payload.data.attachment_list[0].attachmentId == "att-789"
+        assert payload.data.attachment_list[0].filename == "po.pdf"
 
     def test_multiple_attachments(self):
         multi = {
             "data": {
                 "message_id": "msg-multi",
                 "attachment_list": [
-                    {"id": "att-1", "name": "po1.pdf", "mimeType": "application/pdf"},
-                    {"id": "att-2", "name": "po2.pdf", "mimeType": "application/pdf"},
-                    {"id": "att-3"},
+                    {"attachmentId": "att-1", "filename": "po1.pdf", "mimeType": "application/pdf"},
+                    {"attachmentId": "att-2", "filename": "po2.pdf", "mimeType": "application/pdf"},
+                    {"attachmentId": "att-3"},
                 ],
             }
         }
         payload = ComposioWebhookPayload(**multi)
         assert len(payload.data.attachment_list) == 3
-        assert payload.data.attachment_list[2].name is None
+        assert payload.data.attachment_list[2].filename is None
 
 
 class TestParseComposioWebhook:
@@ -133,8 +133,8 @@ class TestParseComposioWebhook:
             "data": {
                 "message_id": "msg-multi",
                 "attachment_list": [
-                    {"id": "att-1"},
-                    {"id": "att-2"},
+                    {"attachmentId": "att-1"},
+                    {"attachmentId": "att-2"},
                 ],
             }
         }

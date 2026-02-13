@@ -16,8 +16,8 @@ class WebhookPayload(BaseModel):
 
 
 class ComposioGmailAttachment(BaseModel):
-    id: str
-    name: str | None = None
+    attachmentId: str
+    filename: str | None = None
     mimeType: str | None = None
 
 
@@ -57,6 +57,6 @@ def parse_composio_webhook(payload: ComposioWebhookPayload) -> WebhookPayload:
         body=data.message_text,
         sender=data.sender,
         has_attachment=len(attachments) > 0,
-        attachment_ids=[a.id for a in attachments],
+        attachment_ids=[a.attachmentId for a in attachments],
         thread_id=data.thread_id,
     )
