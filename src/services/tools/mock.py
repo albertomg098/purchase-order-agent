@@ -4,8 +4,14 @@ from src.services.tools.base import ToolManager
 class MockToolManager(ToolManager):
     """Inspectable mock for evaluation. Captures all calls for assertion."""
 
-    def __init__(self):
+    def __init__(
+        self,
+        mock_attachment_bytes: bytes = b"",
+        mock_message: dict | None = None,
+    ):
         self._calls: list[dict] = []
+        self._mock_attachment_bytes = mock_attachment_bytes
+        self._mock_message = mock_message or {}
 
     def send_email(self, to: str, subject: str, body: str, thread_id: str | None = None) -> dict:
         call = {
@@ -34,8 +40,15 @@ class MockToolManager(ToolManager):
             "attachment_id": attachment_id,
         }
         self._calls.append(call)
-        # Return empty bytes — in evals, PDF bytes come from fixtures
-        return b""
+        return self._mock_attachment_bytes
+
+    def get_email_message(self, message_id: str) -> dict:
+        call = {
+            "action": "get_email_message",
+            "message_id": message_id,
+        }
+        self._calls.append(call)
+        return dict(self._mock_message)
 
     # --- Inspection API for graders ---
 

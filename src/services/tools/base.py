@@ -16,3 +16,8 @@ class ToolManager(ABC):
     def get_email_attachment(self, message_id: str, attachment_id: str) -> bytes:
         """Download an email attachment. Returns raw bytes."""
         ...
+
+    @abstractmethod
+    def get_email_message(self, message_id: str) -> dict:
+        """Fetch full email message by ID. Returns dict with messageText, subject, sender, etc."""
+        ...

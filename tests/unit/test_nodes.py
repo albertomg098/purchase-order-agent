@@ -40,6 +40,9 @@ class FakeToolManager(ToolManager):
     def get_email_attachment(self, message_id, attachment_id):
         return b""
 
+    def get_email_message(self, message_id):
+        return {}
+
 
 class FakePromptStore(PromptStore):
     @property

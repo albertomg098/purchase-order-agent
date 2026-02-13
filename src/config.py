@@ -23,6 +23,8 @@ class AppConfig(BaseSettings):
     # Tools
     tool_manager: str = "composio"  # "composio" | "mock"
     composio_api_key: str | None = None
+    composio_user_id: str = "default"
+    composio_toolkit_versions: dict = {}
 
     # Prompt store
     prompt_store: str = "local"

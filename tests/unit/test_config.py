@@ -10,7 +10,7 @@ from src.config import AppConfig
 def _clean_env(monkeypatch, tmp_path):
     """Prevent real env vars and .env file from leaking into tests."""
     monkeypatch.chdir(tmp_path)
-    for key in ("OPENAI_API_KEY", "COMPOSIO_API_KEY", "OPIK_API_KEY"):
+    for key in ("OPENAI_API_KEY", "COMPOSIO_API_KEY", "OPIK_API_KEY", "SPREADSHEET_ID", "COMPOSIO_USER_ID"):
         monkeypatch.delenv(key, raising=False)
 
 
