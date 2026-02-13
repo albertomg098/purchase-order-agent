@@ -156,10 +156,12 @@ class TestNotifyNode:
         assert node.tools is not None
         assert node.prompt_store is not None
 
-    def test_call_raises_not_implemented(self):
+    def test_call_is_implemented(self):
         node = NotifyNode(llm=FakeLLM(), tools=FakeToolManager(), prompt_store=FakePromptStore())
-        with pytest.raises(NotImplementedError):
+        try:
             node({})
+        except NotImplementedError:
+            pytest.fail("NotifyNode should be implemented")
 
 
 class TestReportNode:
