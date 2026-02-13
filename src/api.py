@@ -9,7 +9,7 @@ import opik
 
 from src.config import AppConfig
 from src.builder import WorkflowBuilder
-from src.core.webhook import ComposioWebhookPayload, parse_composio_webhook
+from src.core.webhook import ComposioWebhookPayload, parse_composio_webhook, _extract_email
 
 logger = logging.getLogger("po_agent.webhook")
 
@@ -65,7 +65,7 @@ def create_app(config: AppConfig | None = None) -> FastAPI:
             full_message = {}
         email_body = full_message.get("messageText", webhook_data.body)
         email_subject = full_message.get("subject", webhook_data.subject)
-        email_sender = full_message.get("sender", webhook_data.sender)
+        email_sender = _extract_email(full_message.get("sender", webhook_data.sender))
 
         # Fetch PDF attachment if present
         pdf_bytes = None

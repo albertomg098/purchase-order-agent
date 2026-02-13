@@ -1,3 +1,5 @@
+from email.utils import parseaddr
+
 from pydantic import BaseModel
 
 
@@ -48,6 +50,12 @@ class ComposioWebhookPayload(BaseModel):
     data: ComposioGmailData
 
 
+def _extract_email(sender: str) -> str:
+    """Extract plain email from '"Display Name" <email>' format."""
+    _, email = parseaddr(sender)
+    return email if email else sender
+
+
 def parse_composio_webhook(payload: ComposioWebhookPayload) -> WebhookPayload:
     """Convert a validated Composio webhook payload into our domain model."""
     data = payload.data
@@ -56,7 +64,7 @@ def parse_composio_webhook(payload: ComposioWebhookPayload) -> WebhookPayload:
         message_id=data.message_id,
         subject=data.subject,
         body=data.message_text,
-        sender=data.sender,
+        sender=_extract_email(data.sender),
         has_attachment=len(attachments) > 0,
         attachment_ids=[a.attachmentId for a in attachments],
         attachment_filenames=[a.filename or "attachment" for a in attachments],

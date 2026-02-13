@@ -143,3 +143,30 @@ class TestParseComposioWebhook:
 
         assert result.attachment_ids == ["att-1", "att-2"]
         assert result.has_attachment is True
+
+    def test_extracts_email_from_display_name_format(self):
+        """Composio sends sender as '"Display Name" <email@example.com>'."""
+        payload_data = {
+            "data": {
+                "message_id": "msg-display",
+                "sender": '"Alberto Martín" <alberto@example.com>',
+                "message_text": "Test",
+            }
+        }
+        composio_payload = ComposioWebhookPayload(**payload_data)
+        result = parse_composio_webhook(composio_payload)
+
+        assert result.sender == "alberto@example.com"
+
+    def test_plain_email_sender_unchanged(self):
+        payload_data = {
+            "data": {
+                "message_id": "msg-plain",
+                "sender": "plain@example.com",
+                "message_text": "Test",
+            }
+        }
+        composio_payload = ComposioWebhookPayload(**payload_data)
+        result = parse_composio_webhook(composio_payload)
+
+        assert result.sender == "plain@example.com"

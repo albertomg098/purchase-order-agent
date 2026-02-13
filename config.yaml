@@ -13,7 +13,7 @@ prompts_dir: prompts
 prompt_language: en
 prompt_fallback_language: en
 
-spreadsheet_id: "" # Set via env
+# spreadsheet_id: set via SPREADSHEET_ID env var
 
 opik_workspace: alberto-martin
 opik_project: po-workflow
