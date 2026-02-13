@@ -103,7 +103,7 @@ class TestSendEmail:
 
 class TestAppendSheetRow:
     @patch("src.services.tools.composio.Composio")
-    def test_calls_googlesheets_create_row(self, mock_composio_cls):
+    def test_calls_googlesheets_batch_update(self, mock_composio_cls):
         mock_client = MagicMock()
         mock_composio_cls.return_value = mock_client
         mock_client.tools.execute.return_value = {"updatedRows": 1}
@@ -112,14 +112,27 @@ class TestAppendSheetRow:
         result = mgr.append_sheet_row(spreadsheet_id="sheet-123", values=["PO-001", "Acme"])
 
         mock_client.tools.execute.assert_called_once_with(
-            "GOOGLESHEETS_CREATE_SPREADSHEET_ROW",
+            "GOOGLESHEETS_BATCH_UPDATE",
             user_id="default",
             arguments={
                 "spreadsheet_id": "sheet-123",
-                "values": ["PO-001", "Acme"],
+                "sheet_name": "Sheet1",
+                "values": [["PO-001", "Acme"]],
             },
         )
         assert result["status"] == "ok"
+
+    @patch("src.services.tools.composio.Composio")
+    def test_uses_custom_sheet_name(self, mock_composio_cls):
+        mock_client = MagicMock()
+        mock_composio_cls.return_value = mock_client
+        mock_client.tools.execute.return_value = {"updatedRows": 1}
+
+        mgr = ComposioToolManager(api_key="test-key", sheet_name="PO Tracking")
+        mgr.append_sheet_row(spreadsheet_id="sheet-123", values=["PO-001"])
+
+        call_args = mock_client.tools.execute.call_args
+        assert call_args[1]["arguments"]["sheet_name"] == "PO Tracking"
 
 
 class TestGetEmailAttachment:

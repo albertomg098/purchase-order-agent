@@ -37,6 +37,7 @@ class AppConfig(BaseSettings):
 
     # Google Sheets
     spreadsheet_id: str = ""
+    sheet_name: str = "Sheet1"
 
     # Opik
     opik_workspace: str = "alberto-martin"

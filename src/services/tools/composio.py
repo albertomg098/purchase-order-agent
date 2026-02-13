@@ -14,12 +14,14 @@ class ComposioToolManager(ToolManager):
         api_key: str,
         user_id: str = "default",
         toolkit_versions: dict[str, str] | None = None,
+        sheet_name: str = "Sheet1",
     ):
         self._client = Composio(
             api_key=api_key,
             toolkit_versions=toolkit_versions or {},
         )
         self._user_id = user_id
+        self._sheet_name = sheet_name
 
     @opik.track(name="tool_send_email")
     def send_email(self, to: str, subject: str, body: str, thread_id: str | None = None) -> dict:
@@ -42,11 +44,12 @@ class ComposioToolManager(ToolManager):
     @opik.track(name="tool_append_sheet_row")
     def append_sheet_row(self, spreadsheet_id: str, values: list[str]) -> dict:
         result = self._client.tools.execute(
-            "GOOGLESHEETS_CREATE_SPREADSHEET_ROW",
+            "GOOGLESHEETS_BATCH_UPDATE",
             user_id=self._user_id,
             arguments={
                 "spreadsheet_id": spreadsheet_id,
-                "values": values,
+                "sheet_name": self._sheet_name,
+                "values": [values],
             },
         )
         return {"status": "ok", "result": result}

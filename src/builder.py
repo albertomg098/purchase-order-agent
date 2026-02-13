@@ -72,6 +72,7 @@ class WorkflowBuilder:
                 api_key=self.config.composio_api_key,
                 user_id=self.config.composio_user_id,
                 toolkit_versions=self.config.composio_toolkit_versions,
+                sheet_name=self.config.sheet_name,
             )
         raise ValueError(f"Unknown tool manager: {self.config.tool_manager}")
 
