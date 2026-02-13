@@ -6,7 +6,6 @@ from src.services.llm.base import LLMService
 from src.services.llm.openai import OpenAILLM
 from src.services.tools.base import ToolManager
 from src.services.tools.mock import MockToolManager
-from src.services.tools.composio import ComposioToolManager
 from src.services.prompt_store.base import PromptStore
 from src.services.prompt_store.local import LocalPromptStore
 from src.nodes.classify import ClassifyNode
@@ -40,14 +39,15 @@ class WorkflowBuilder:
 
     def build(self):
         """Build and return a compiled LangGraph workflow."""
-        classify = ClassifyNode(llm=self._llm, prompt_store=self._prompt_store)
-        extract = ExtractNode(ocr=self._ocr, llm=self._llm, prompt_store=self._prompt_store)
-        validate = ValidateNode()
-        track = TrackNode(tools=self._tool_manager, spreadsheet_id=self.config.spreadsheet_id)
-        notify = NotifyNode(llm=self._llm, tools=self._tool_manager, prompt_store=self._prompt_store)
-        report = ReportNode()
-
-        return build_graph(classify, extract, validate, track, notify, report)
+        nodes = {
+            "classify": ClassifyNode(llm=self._llm, prompt_store=self._prompt_store),
+            "extract": ExtractNode(ocr=self._ocr, llm=self._llm, prompt_store=self._prompt_store),
+            "validate": ValidateNode(self.config.confidence_threshold),
+            "track": TrackNode(tools=self._tool_manager, spreadsheet_id=self.config.spreadsheet_id),
+            "notify": NotifyNode(llm=self._llm, tools=self._tool_manager, prompt_store=self._prompt_store),
+            "report": ReportNode(),
+        }
+        return build_graph(nodes)
 
     def _build_ocr(self) -> OCRService:
         if self.config.ocr_engine == "tesseract":
@@ -56,14 +56,18 @@ class WorkflowBuilder:
 
     def _build_llm(self) -> LLMService:
         if self.config.llm_provider == "openai":
-            return OpenAILLM()
+            return OpenAILLM(
+                model=self.config.llm_model,
+                api_key=self.config.openai_api_key,
+                base_url=self.config.llm_base_url,
+            )
         raise ValueError(f"Unknown LLM provider: {self.config.llm_provider}")
 
     def _build_tool_manager(self) -> ToolManager:
         if self.config.tool_manager == "mock":
             return MockToolManager()
         if self.config.tool_manager == "composio":
-            return ComposioToolManager()
+            raise NotImplementedError("ComposioToolManager is Phase 3")
         raise ValueError(f"Unknown tool manager: {self.config.tool_manager}")
 
     def _build_prompt_store(self) -> PromptStore:
