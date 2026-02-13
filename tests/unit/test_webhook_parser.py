@@ -1,4 +1,9 @@
-"""Unit tests for Composio webhook payload parsing."""
+"""Unit tests for Composio webhook payload parsing.
+
+Tests use the real Composio TriggerEvent format:
+- Envelope: trigger_slug, payload (dict with Gmail data)
+- Gmail fields: message_id, subject, sender, message_text, thread_id, attachment_list
+"""
 import pytest
 from pydantic import ValidationError
 
@@ -9,18 +14,17 @@ from src.core.webhook import (
 )
 
 
+# Real Composio TriggerEvent format
 VALID_PAYLOAD = {
-    "log_id": "log_abc123",
-    "timestamp": "2026-02-13T10:00:00Z",
-    "type": "gmail_new_gmail_message",
-    "data": {
-        "messageId": "msg-123",
-        "threadId": "thread-456",
+    "trigger_slug": "GMAIL_NEW_GMAIL_MESSAGE",
+    "payload": {
+        "message_id": "msg-123",
+        "thread_id": "thread-456",
         "subject": "PO-2024-001 Order",
         "sender": "customer@example.com",
-        "snippet": "Please find attached our purchase order...",
-        "attachments": [
-            {"attachmentId": "att-789", "filename": "po.pdf"},
+        "message_text": "Please find attached our purchase order...",
+        "attachment_list": [
+            {"id": "att-789", "name": "po.pdf", "mimeType": "application/pdf"},
         ],
     },
 }
@@ -29,60 +33,57 @@ VALID_PAYLOAD = {
 class TestComposioWebhookPayloadValidation:
     def test_validates_correct_payload(self):
         payload = ComposioWebhookPayload(**VALID_PAYLOAD)
-        assert payload.data.messageId == "msg-123"
-        assert payload.log_id == "log_abc123"
-        assert payload.type == "gmail_new_gmail_message"
+        assert payload.payload.message_id == "msg-123"
+        assert payload.trigger_slug == "GMAIL_NEW_GMAIL_MESSAGE"
 
     def test_rejects_missing_message_id(self):
         bad_payload = {
-            "data": {
+            "payload": {
                 "subject": "Test",
             }
         }
         with pytest.raises(ValidationError):
             ComposioWebhookPayload(**bad_payload)
 
-    def test_rejects_missing_data(self):
+    def test_rejects_missing_payload(self):
         with pytest.raises(ValidationError):
             ComposioWebhookPayload()
 
     def test_optional_fields_default_gracefully(self):
         minimal_payload = {
-            "data": {
-                "messageId": "msg-minimal",
+            "payload": {
+                "message_id": "msg-minimal",
             }
         }
         payload = ComposioWebhookPayload(**minimal_payload)
-        assert payload.data.messageId == "msg-minimal"
-        assert payload.data.threadId is None
-        assert payload.data.subject == ""
-        assert payload.data.sender == ""
-        assert payload.data.snippet == ""
-        assert payload.data.attachments == []
-        assert payload.log_id is None
-        assert payload.timestamp is None
-        assert payload.type is None
+        assert payload.payload.message_id == "msg-minimal"
+        assert payload.payload.thread_id is None
+        assert payload.payload.subject == ""
+        assert payload.payload.sender == ""
+        assert payload.payload.message_text == ""
+        assert payload.payload.attachment_list == []
+        assert payload.trigger_slug is None
 
     def test_parses_attachments(self):
         payload = ComposioWebhookPayload(**VALID_PAYLOAD)
-        assert len(payload.data.attachments) == 1
-        assert payload.data.attachments[0].attachmentId == "att-789"
-        assert payload.data.attachments[0].filename == "po.pdf"
+        assert len(payload.payload.attachment_list) == 1
+        assert payload.payload.attachment_list[0].id == "att-789"
+        assert payload.payload.attachment_list[0].name == "po.pdf"
 
     def test_multiple_attachments(self):
         multi = {
-            "data": {
-                "messageId": "msg-multi",
-                "attachments": [
-                    {"attachmentId": "att-1", "filename": "po1.pdf"},
-                    {"attachmentId": "att-2", "filename": "po2.pdf"},
-                    {"attachmentId": "att-3"},
+            "payload": {
+                "message_id": "msg-multi",
+                "attachment_list": [
+                    {"id": "att-1", "name": "po1.pdf", "mimeType": "application/pdf"},
+                    {"id": "att-2", "name": "po2.pdf", "mimeType": "application/pdf"},
+                    {"id": "att-3"},
                 ],
             }
         }
         payload = ComposioWebhookPayload(**multi)
-        assert len(payload.data.attachments) == 3
-        assert payload.data.attachments[2].filename is None
+        assert len(payload.payload.attachment_list) == 3
+        assert payload.payload.attachment_list[2].name is None
 
 
 class TestParseComposioWebhook:
@@ -101,11 +102,11 @@ class TestParseComposioWebhook:
 
     def test_no_attachments(self):
         no_att = {
-            "data": {
-                "messageId": "msg-no-att",
+            "payload": {
+                "message_id": "msg-no-att",
                 "subject": "Question",
                 "sender": "user@test.com",
-                "snippet": "Just a question",
+                "message_text": "Just a question",
             }
         }
         composio_payload = ComposioWebhookPayload(**no_att)
@@ -116,8 +117,8 @@ class TestParseComposioWebhook:
 
     def test_no_thread_id(self):
         no_thread = {
-            "data": {
-                "messageId": "msg-no-thread",
+            "payload": {
+                "message_id": "msg-no-thread",
             }
         }
         composio_payload = ComposioWebhookPayload(**no_thread)
@@ -127,11 +128,11 @@ class TestParseComposioWebhook:
 
     def test_extracts_multiple_attachment_ids(self):
         multi = {
-            "data": {
-                "messageId": "msg-multi",
-                "attachments": [
-                    {"attachmentId": "att-1"},
-                    {"attachmentId": "att-2"},
+            "payload": {
+                "message_id": "msg-multi",
+                "attachment_list": [
+                    {"id": "att-1"},
+                    {"id": "att-2"},
                 ],
             }
         }

@@ -1,6 +1,9 @@
+import hashlib
+import hmac
+import json
 import logging
 
-from fastapi import FastAPI, BackgroundTasks
+from fastapi import FastAPI, BackgroundTasks, Request, HTTPException
 import opik
 
 from src.config import AppConfig
@@ -8,6 +11,28 @@ from src.builder import WorkflowBuilder
 from src.core.webhook import ComposioWebhookPayload, parse_composio_webhook
 
 logger = logging.getLogger("po_agent.webhook")
+
+
+def _verify_signature(body: bytes, secret: str, headers: dict[str, str]) -> None:
+    """Verify Composio webhook signature. Raises HTTPException(401) on failure."""
+    webhook_id = headers.get("webhook-id", "")
+    timestamp = headers.get("webhook-timestamp", "")
+    signature_header = headers.get("webhook-signature", "")
+
+    if not webhook_id or not timestamp or not signature_header:
+        raise HTTPException(status_code=401, detail="Missing webhook signature headers")
+
+    to_sign = f"{webhook_id}.{timestamp}.{body.decode()}"
+    expected = hmac.new(secret.encode(), to_sign.encode(), hashlib.sha256).hexdigest()
+
+    # signature_header format: "v1,<hex_signature>"
+    parts = signature_header.split(",", 1)
+    if len(parts) != 2:
+        raise HTTPException(status_code=401, detail="Invalid signature format")
+
+    received = parts[1]
+    if not hmac.compare_digest(expected, received):
+        raise HTTPException(status_code=401, detail="Invalid webhook signature")
 
 
 def create_app(config: AppConfig | None = None) -> FastAPI:
@@ -18,6 +43,7 @@ def create_app(config: AppConfig | None = None) -> FastAPI:
     builder = WorkflowBuilder(config)
     workflow = builder.build()
     tool_manager = builder.tool_manager
+    webhook_secret = config.composio_webhook_secret
 
     app = FastAPI(title="PO Agent")
 
@@ -67,11 +93,23 @@ def create_app(config: AppConfig | None = None) -> FastAPI:
         return result
 
     @app.post("/webhook/email", status_code=202)
-    async def handle_email_webhook(payload: ComposioWebhookPayload, background_tasks: BackgroundTasks):
+    async def handle_email_webhook(request: Request, background_tasks: BackgroundTasks):
         """Receive Composio Gmail trigger webhook. Returns immediately, processes in background."""
-        logger.info(f"Webhook received: message_id={payload.data.messageId}")
+        body = await request.body()
+
+        # Verify signature if secret is configured
+        if webhook_secret:
+            _verify_signature(body, webhook_secret, dict(request.headers))
+
+        # Parse and validate payload
+        try:
+            payload = ComposioWebhookPayload(**json.loads(body))
+        except (json.JSONDecodeError, Exception) as e:
+            raise HTTPException(status_code=422, detail=str(e))
+
+        logger.info(f"Webhook received: message_id={payload.payload.message_id}")
         background_tasks.add_task(process_email, payload)
-        return {"status": "accepted", "message_id": payload.data.messageId}
+        return {"status": "accepted", "message_id": payload.payload.message_id}
 
     @app.get("/health")
     async def health():

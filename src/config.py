@@ -44,6 +44,9 @@ class AppConfig(BaseSettings):
     opik_project: str = "po-workflow"
     opik_api_key: str | None = None
 
+    # Webhook verification
+    composio_webhook_secret: str | None = None
+
     @classmethod
     def from_yaml(cls, path: str | Path) -> "AppConfig":
         with open(path) as f:

@@ -12,45 +12,47 @@ class WebhookPayload(BaseModel):
     thread_id: str | None = None
 
 
-# --- Composio webhook Pydantic models ---
+# --- Composio TriggerEvent Pydantic models ---
 
 
 class ComposioGmailAttachment(BaseModel):
-    attachmentId: str
-    filename: str | None = None
+    id: str
+    name: str | None = None
+    mimeType: str | None = None
 
 
 class ComposioGmailData(BaseModel):
-    messageId: str
-    threadId: str | None = None
+    message_id: str
+    thread_id: str | None = None
     subject: str = ""
     sender: str = ""
-    snippet: str = ""
-    attachments: list[ComposioGmailAttachment] = []
+    message_text: str = ""
+    attachment_list: list[ComposioGmailAttachment] = []
 
 
 class ComposioWebhookPayload(BaseModel):
-    """Pydantic model for validating Composio webhook payload.
+    """Pydantic model for validating Composio TriggerEvent webhook payload.
+
+    Composio sends a TriggerEvent envelope with trigger metadata and the
+    Gmail-specific data nested in the `payload` field.
 
     If the real payload differs from this model, FastAPI returns 422
     with the exact validation error — making debugging trivial.
     """
-    log_id: str | None = None
-    timestamp: str | None = None
-    type: str | None = None
-    data: ComposioGmailData
+    trigger_slug: str | None = None
+    payload: ComposioGmailData
 
 
 def parse_composio_webhook(payload: ComposioWebhookPayload) -> WebhookPayload:
     """Convert a validated Composio webhook payload into our domain model."""
-    data = payload.data
-    attachments = data.attachments
+    data = payload.payload
+    attachments = data.attachment_list
     return WebhookPayload(
-        message_id=data.messageId,
+        message_id=data.message_id,
         subject=data.subject,
-        body=data.snippet,
+        body=data.message_text,
         sender=data.sender,
         has_attachment=len(attachments) > 0,
-        attachment_ids=[a.attachmentId for a in attachments],
-        thread_id=data.threadId,
+        attachment_ids=[a.id for a in attachments],
+        thread_id=data.thread_id,
     )
