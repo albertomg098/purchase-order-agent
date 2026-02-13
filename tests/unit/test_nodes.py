@@ -117,14 +117,16 @@ class TestValidateNode:
     def test_has_correct_name(self):
         assert ValidateNode.name == "validate"
 
-    def test_accepts_no_args(self):
-        node = ValidateNode()
-        assert node is not None
+    def test_accepts_confidence_threshold(self):
+        node = ValidateNode(confidence_threshold=0.7)
+        assert node.confidence_threshold == 0.7
 
-    def test_call_raises_not_implemented(self):
+    def test_call_is_implemented(self):
         node = ValidateNode()
-        with pytest.raises(NotImplementedError):
+        try:
             node({})
+        except NotImplementedError:
+            pytest.fail("ValidateNode should be implemented")
 
 
 class TestTrackNode:
