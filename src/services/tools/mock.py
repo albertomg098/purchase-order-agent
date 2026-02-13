@@ -33,7 +33,7 @@ class MockToolManager(ToolManager):
         self._calls.append(call)
         return {"status": "ok", "mock": True}
 
-    def get_email_attachment(self, message_id: str, attachment_id: str) -> bytes:
+    def get_email_attachment(self, message_id: str, attachment_id: str, file_name: str = "attachment") -> bytes:
         call = {
             "action": "get_email_attachment",
             "message_id": message_id,

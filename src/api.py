@@ -74,6 +74,7 @@ def create_app(config: AppConfig | None = None) -> FastAPI:
                 pdf_bytes = tool_manager.get_email_attachment(
                     message_id=webhook_data.message_id,
                     attachment_id=webhook_data.attachment_ids[0],
+                    file_name=webhook_data.attachment_filenames[0],
                 )
             except Exception as e:
                 logger.warning(f"Failed to fetch attachment from {webhook_data.message_id}: {e}")

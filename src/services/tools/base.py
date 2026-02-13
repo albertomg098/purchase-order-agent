@@ -13,7 +13,7 @@ class ToolManager(ABC):
         ...
 
     @abstractmethod
-    def get_email_attachment(self, message_id: str, attachment_id: str) -> bytes:
+    def get_email_attachment(self, message_id: str, attachment_id: str, file_name: str = "attachment") -> bytes:
         """Download an email attachment. Returns raw bytes."""
         ...
 

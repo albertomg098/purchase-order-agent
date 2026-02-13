@@ -1,5 +1,4 @@
 """Unit tests for ComposioToolManager with mocked Composio client."""
-import base64
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -137,16 +136,17 @@ class TestAppendSheetRow:
 
 class TestGetEmailAttachment:
     @patch("src.services.tools.composio.Composio")
-    def test_calls_gmail_get_attachment_and_decodes_base64(self, mock_composio_cls):
+    def test_calls_gmail_get_attachment_and_reads_file(self, mock_composio_cls, tmp_path):
         mock_client = MagicMock()
         mock_composio_cls.return_value = mock_client
 
         raw_bytes = b"PDF content here"
-        encoded = base64.b64encode(raw_bytes).decode()
-        mock_client.tools.execute.return_value = {"data": encoded}
+        tmp_file = tmp_path / "attachment.pdf"
+        tmp_file.write_bytes(raw_bytes)
+        mock_client.tools.execute.return_value = {"data": {"file": str(tmp_file)}}
 
         mgr = ComposioToolManager(api_key="test-key")
-        result = mgr.get_email_attachment(message_id="msg-123", attachment_id="att-456")
+        result = mgr.get_email_attachment(message_id="msg-123", attachment_id="att-456", file_name="po.pdf")
 
         mock_client.tools.execute.assert_called_once_with(
             "GMAIL_GET_ATTACHMENT",
@@ -155,6 +155,7 @@ class TestGetEmailAttachment:
                 "message_id": "msg-123",
                 "attachment_id": "att-456",
                 "user_id": "me",
+                "file_name": "po.pdf",
             },
         )
         assert result == raw_bytes

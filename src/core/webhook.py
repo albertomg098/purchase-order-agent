@@ -9,6 +9,7 @@ class WebhookPayload(BaseModel):
     sender: str
     has_attachment: bool
     attachment_ids: list[str] = []
+    attachment_filenames: list[str] = []
     thread_id: str | None = None
 
 
@@ -58,5 +59,6 @@ def parse_composio_webhook(payload: ComposioWebhookPayload) -> WebhookPayload:
         sender=data.sender,
         has_attachment=len(attachments) > 0,
         attachment_ids=[a.attachmentId for a in attachments],
+        attachment_filenames=[a.filename or "attachment" for a in attachments],
         thread_id=data.thread_id,
     )

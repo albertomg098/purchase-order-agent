@@ -1,5 +1,3 @@
-import base64
-
 import opik
 from composio import Composio
 
@@ -55,7 +53,7 @@ class ComposioToolManager(ToolManager):
         return {"status": "ok", "result": result}
 
     @opik.track(name="tool_get_attachment")
-    def get_email_attachment(self, message_id: str, attachment_id: str) -> bytes:
+    def get_email_attachment(self, message_id: str, attachment_id: str, file_name: str = "attachment") -> bytes:
         result = self._client.tools.execute(
             "GMAIL_GET_ATTACHMENT",
             user_id=self._user_id,
@@ -63,9 +61,12 @@ class ComposioToolManager(ToolManager):
                 "message_id": message_id,
                 "attachment_id": attachment_id,
                 "user_id": "me",
+                "file_name": file_name,
             },
         )
-        return base64.b64decode(result["data"])
+        file_path = result["data"]["file"]
+        with open(file_path, "rb") as f:
+            return f.read()
 
     @opik.track(name="tool_get_email_message")
     def get_email_message(self, message_id: str) -> dict:
