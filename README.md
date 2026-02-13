@@ -370,22 +370,76 @@ The full pipeline (OCR + LLM) takes 30+ seconds. Returning 202 immediately preve
 
 ## Future Improvements
 
+### Planned Next
+
+<details open>
+<summary><b>Temperature tuning for deterministic results</b></summary>
+
+- **Evals at temperature 0** — Lock LLM calls to `temperature=0` during eval runs to eliminate variance and ensure reproducible scores across experiments
+- **Lower temperature in production** — Reduce from default to `0`–`0.2` for classification and extraction where creativity is unnecessary, keeping slightly higher for email generation
+</details>
+
+<details open>
+<summary><b>Trace-driven scenario generation</b></summary>
+
+- **Mine real traces for new scenarios** — Use Opik production traces to identify new edge cases and automatically generate eval scenarios from real-world emails
+- **Feedback loop** — Traces that produce low-confidence or unexpected results become candidate scenarios for the eval dataset
+</details>
+
+<details open>
+<summary><b>Fuzzy matching in ExtractionAccuracy</b></summary>
+
+- **Problem** — The current comparator is `normalize(a) == normalize(b)` where normalize is just lowercase + strip. This is brittle for address comparisons — `"c/ industria 45, pol. ind. sur, granada"` vs `"calle industria 45, polígono industrial sur, granada"` would fail despite being semantically identical
+- **Token-level similarity** — Use Jaccard overlap or Levenshtein ratio for free-text fields
+- **LLM-as-judge per field** — Call an LLM to score semantic equivalence on ambiguous fields
+- **Field-type thresholds** — Separate matching strategies: exact match for structured fields (`order_id`, `date`) vs fuzzy match for free-text fields (`shipping_address`, `company_name`)
+</details>
+
+<details open>
+<summary><b>Dynamic USER_ID from webhook</b></summary>
+
+- **Extract USER_ID from payload** — Parse the Composio user/entity ID from the webhook payload instead of relying on a static `COMPOSIO_USER_ID` env var
+- **Per-user context** — Enable multi-user support where each sender maps to a distinct Composio entity and downstream resources
+</details>
+
+<details open>
+<summary><b>User-to-spreadsheet mapping (SQLite/DB)</b></summary>
+
+- **Persistent mapping store** — Create a SQLite (or Postgres) table mapping `user_id → spreadsheet_id` so each user's POs are tracked in their own sheet
+- **Auto-provisioning** — Optionally create a new spreadsheet on first PO for unknown users
+</details>
+
+<details open>
+<summary><b>GEval (LLM-as-a-Judge) for EmailQuality</b></summary>
+
+- **Opik native GEval** — Replace the heuristic email grader with Opik's built-in G-Eval metric for LLM-based scoring on a continuous scale
+- **Multi-dimensional scoring** — Separate scores for professionalism, completeness, actionability, accuracy
+- **Hybrid approach** — Heuristic grader in CI (fast/cheap), LLM judge in scheduled evals (rich signal)
+- **Beyond email** — Apply LLM judge to `classification_reason` quality and `extraction_warnings` helpfulness
+</details>
+
+<details open>
+<summary><b>Opik as single source of truth</b></summary>
+
+- **Prompt Store in Opik** — Migrate prompt templates from local YAML files to Opik's managed prompt store for versioning, A/B testing, and central management
+- **Datasets in Opik** — Use Opik datasets as the canonical source for eval scenarios instead of local JSON files, enabling collaborative editing and lineage tracking
+</details>
+
+<details open>
+<summary><b>Eval runs in CI (GitHub Actions)</b></summary>
+
+- **CI blocker** — Add a GitHub Actions workflow that runs the eval suite on every PR and blocks merge if any metric drops below its threshold
+- **Score tracking** — Post eval score diffs as PR comments so regressions are visible before merge
+</details>
+
+### Other Ideas
+
 <details>
 <summary><b>Scalability</b></summary>
 
 - **Task queue** — Replace `BackgroundTasks` with Celery or Redis-backed queue (arq, dramatiq) for horizontal worker scaling and retry/dead-letter semantics
 - **Stateful deduplication** — Redis or database-backed dedup store that survives restarts and works across instances
-- **Multi-tenant routing** — Route webhooks by sender domain or Composio user ID with per-tenant config
 - **Concurrent attachments** — Parallel OCR + extraction for emails with multiple PDFs
-</details>
-
-<details>
-<summary><b>LLM-as-a-Judge evaluation</b></summary>
-
-- **Opik G-Eval integration** — Replace heuristic email grader with LLM-based scoring on a continuous scale
-- **Multi-dimensional scoring** — Separate scores for professionalism, completeness, actionability, accuracy
-- **Hybrid approach** — Heuristic grader in CI (fast/cheap), LLM judge in scheduled evals (rich signal)
-- **Beyond email** — Apply LLM judge to `classification_reason` quality and `extraction_warnings` helpfulness
 </details>
 
 ---
