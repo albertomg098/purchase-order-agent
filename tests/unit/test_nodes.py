@@ -105,10 +105,12 @@ class TestExtractNode:
         assert node.llm is not None
         assert node.prompt_store is not None
 
-    def test_call_raises_not_implemented(self):
+    def test_call_is_implemented(self):
         node = ExtractNode(ocr=FakeOCR(), llm=FakeLLM(), prompt_store=FakePromptStore())
-        with pytest.raises(NotImplementedError):
+        try:
             node({})
+        except NotImplementedError:
+            pytest.fail("ExtractNode should be implemented")
 
 
 class TestValidateNode:
