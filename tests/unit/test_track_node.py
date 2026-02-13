@@ -48,7 +48,7 @@ class TestTrackNodeHappyPath:
             "missing_fields": ["driver_phone"],
         }
 
-        result = node(state)
+        node(state)
 
         rows = tools.sheet_rows_added
         row_values = rows[0]["values"]

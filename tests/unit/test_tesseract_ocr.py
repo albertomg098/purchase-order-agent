@@ -26,7 +26,7 @@ class TestExtractText:
         mock_tess.image_to_string.side_effect = ["Page one text", "Page two text"]
 
         ocr = TesseractOCR(lang="eng", dpi=300)
-        result = ocr.extract_text(b"fake-pdf-bytes")
+        ocr.extract_text(b"fake-pdf-bytes")
 
         mock_convert.assert_called_once_with(b"fake-pdf-bytes", dpi=300)
         assert mock_tess.image_to_string.call_count == 2
