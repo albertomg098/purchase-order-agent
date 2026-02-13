@@ -1,113 +1,255 @@
-# PO Agent
+<div align="center">
 
-AI agent for automated purchase order intake and fulfillment. An email arrives via webhook, the agent classifies whether it's a valid PO, extracts structured data from the attached PDF using OCR + LLM, validates completeness, logs the order in Google Sheets, and sends a confirmation (or missing-info request) back to the sender.
+# Purchase Order Agent
 
-The project follows an **eval-first** methodology: the evaluation framework (graders, scenarios, PDF fixtures) was designed before the agent itself. This ensures every node is testable against ground-truth expectations from day one, and prevents regressions as the pipeline evolves.
+**AI-powered purchase order intake and fulfillment pipeline**
 
-215 unit tests, 15 integration tests, 5 graders, 25 eval scenarios across 5 categories. All eval thresholds met.
+Automatically processes incoming purchase order emails — classifies, extracts data via OCR + LLM,
+validates, logs to Google Sheets, and replies to the sender.
+
+[![Python 3.12+](https://img.shields.io/badge/python-3.12+-3776AB?logo=python&logoColor=white)](https://python.org)
+[![LangGraph](https://img.shields.io/badge/LangGraph-workflow-1C3C3C?logo=langchain&logoColor=white)](https://langchain-ai.github.io/langgraph/)
+[![OpenAI](https://img.shields.io/badge/OpenAI-gpt--4o--mini-412991?logo=openai&logoColor=white)](https://openai.com)
+[![FastAPI](https://img.shields.io/badge/FastAPI-webhook-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
+[![Railway](https://img.shields.io/badge/Railway-deployed-0B0D0E?logo=railway&logoColor=white)](https://railway.app)
+[![Tests](https://img.shields.io/badge/tests-230_passing-brightgreen?logo=pytest&logoColor=white)](#testing)
+[![Eval](https://img.shields.io/badge/eval_scores-all_thresholds_met-brightgreen)](#eval-scores)
+
+</div>
+
+---
+
+## How It Works
+
+```mermaid
+flowchart LR
+    subgraph Intake
+        A["📧 Gmail"] -->|new email| B["Composio\nTrigger"]
+        B -->|webhook POST| C["FastAPI\n/webhook/email"]
+    end
+
+    subgraph LangGraph Pipeline
+        direction LR
+        C -->|background task| D["🏷️ Classify"]
+        D -->|valid PO| E["📄 Extract\nOCR + LLM"]
+        D -->|not a PO| J
+        E --> F["✅ Validate"]
+        F --> G["📊 Track\nGoogle Sheets"]
+        G --> H["📨 Notify\nSend reply"]
+        H --> J["📋 Report"]
+    end
+
+    J --> K(("END"))
+
+    style A fill:#4285F4,color:#fff,stroke:none
+    style B fill:#FF6B35,color:#fff,stroke:none
+    style C fill:#009688,color:#fff,stroke:none
+    style D fill:#7C4DFF,color:#fff,stroke:none
+    style E fill:#7C4DFF,color:#fff,stroke:none
+    style F fill:#7C4DFF,color:#fff,stroke:none
+    style G fill:#7C4DFF,color:#fff,stroke:none
+    style H fill:#7C4DFF,color:#fff,stroke:none
+    style J fill:#7C4DFF,color:#fff,stroke:none
+    style K fill:#424242,color:#fff,stroke:none
+```
+
+> **Deterministic pipeline, not an autonomous agent.** LangGraph orchestrates a fixed sequence of nodes with one conditional branch after classification. The LLM generates content (classification, extraction, email text), but never decides which tools to call.
 
 ## Architecture
 
+```mermaid
+graph TB
+    subgraph API Layer
+        WH["FastAPI Webhook<br/><i>HMAC-SHA256 verification</i>"]
+    end
+
+    subgraph Orchestration
+        WF["LangGraph Workflow<br/><i>Typed state, conditional routing</i>"]
+    end
+
+    subgraph Nodes
+        CL["ClassifyNode"]
+        EX["ExtractNode"]
+        VA["ValidateNode"]
+        TR["TrackNode"]
+        NO["NotifyNode"]
+        RE["ReportNode"]
+    end
+
+    subgraph Services
+        LLM["LLMService<br/><i>OpenAI gpt-4o-mini</i>"]
+        OCR["OCRService<br/><i>Tesseract + pdf2image</i>"]
+        TM["ToolManager<br/><i>Composio Gmail + Sheets</i>"]
+        PS["PromptStore<br/><i>YAML templates</i>"]
+    end
+
+    subgraph External
+        GM["Gmail API"]
+        GS["Google Sheets API"]
+        OA["OpenAI API"]
+        OP["Opik Tracing"]
+    end
+
+    WH --> WF
+    WF --> CL & EX & VA & TR & NO & RE
+
+    CL --> LLM & PS
+    EX --> LLM & OCR & PS
+    VA -.->|pure logic| VA
+    TR --> TM
+    NO --> LLM & TM & PS
+    RE -.->|pure logic| RE
+
+    TM --> GM & GS
+    LLM --> OA
+    WF -.->|traces| OP
+
+    style WH fill:#009688,color:#fff,stroke:none
+    style WF fill:#1C3C3C,color:#fff,stroke:none
+    style CL fill:#7C4DFF,color:#fff,stroke:none
+    style EX fill:#7C4DFF,color:#fff,stroke:none
+    style VA fill:#7C4DFF,color:#fff,stroke:none
+    style TR fill:#7C4DFF,color:#fff,stroke:none
+    style NO fill:#7C4DFF,color:#fff,stroke:none
+    style RE fill:#7C4DFF,color:#fff,stroke:none
+    style LLM fill:#E65100,color:#fff,stroke:none
+    style OCR fill:#E65100,color:#fff,stroke:none
+    style TM fill:#E65100,color:#fff,stroke:none
+    style PS fill:#E65100,color:#fff,stroke:none
+    style GM fill:#4285F4,color:#fff,stroke:none
+    style GS fill:#0F9D58,color:#fff,stroke:none
+    style OA fill:#412991,color:#fff,stroke:none
+    style OP fill:#FF6B35,color:#fff,stroke:none
 ```
-                                ┌──────────┐
-                  Gmail ──────▶ │ Composio │
-                                │ Trigger  │
-                                └────┬─────┘
-                                     │ webhook POST
-                                     ▼
-                              ┌─────────────┐
-                              │   FastAPI    │
-                              │  /webhook/   │
-                              │   email      │
-                              └──────┬───────┘
-                                     │ background task
-                                     ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                      LangGraph Workflow                         │
-│                                                                 │
-│  classify ──┬──▶ extract ──▶ validate ──▶ track ──▶ notify ──┐ │
-│             │                                                 │ │
-│             └──────────────────────────────────────────────┐  │ │
-│                                                            ▼  ▼ │
-│                                                          report │
-│                                                            │    │
-└────────────────────────────────────────────────────────────┼────┘
-                                                             ▼
-                                                            END
-```
 
-The workflow is **deterministic**, not agentic — LangGraph orchestrates a fixed sequence of nodes with one conditional branch after classification. Each node is a class inheriting `BaseNode(ABC)` that receives its dependencies (LLM, OCR, tools, prompts) via constructor injection.
+### Node Responsibilities
 
-### Nodes
+| Node | What it does | Inputs | Outputs |
+|:-----|:-------------|:-------|:--------|
+| **Classify** | Analyzes email subject + body + attachment presence | Email metadata | `is_valid_po`, `po_id`, `reason` |
+| **Extract** | PDF → OCR text → LLM structured output with per-field confidence | PDF attachment | `PurchaseOrder` with 7 fields |
+| **Validate** | Checks fields for `None`, empty strings, or low confidence | Extracted PO | `missing_fields` list |
+| **Track** | Appends row to Google Sheets via Composio | Validated PO | Sheet row ID |
+| **Notify** | LLM generates confirmation or missing-info email, sends via Gmail | PO + validation result | Sent email |
+| **Report** | Consolidates final status | All prior state | `completed` / `missing_info` / `skipped` / `error` |
 
-| Node | Responsibility |
-|------|---------------|
-| **classify** | Analyzes email subject + body + attachment presence. LLM structured output → `is_valid_po`, `po_id`, `reason`. |
-| **extract** | PDF → OCR text (Tesseract) → LLM structured output with per-field confidence scores. |
-| **validate** | Checks extracted fields for `None`, empty strings, or confidence below threshold. Produces `missing_fields` list. |
-| **track** | Appends a row to Google Sheets via Composio with extracted PO data. |
-| **notify** | LLM generates a confirmation or missing-info email, sent via Composio Gmail. |
-| **report** | Consolidates `final_status`: `completed`, `missing_info`, `skipped`, or `error`. |
+### Error Handling
 
-### Error handling
+Every node wraps its logic in `try/except`. On failure, it sets `error_message` in the workflow state. Downstream nodes check this guard and pass through. `ReportNode` consolidates the final status.
 
-Every node wraps its logic in try/except. On failure, it sets `error_message` in the workflow state. Downstream nodes check for this guard and pass through without executing. `ReportNode` consolidates the final status.
+---
 
 ## Tech Stack
 
-| Component | Technology | Why |
-|-----------|-----------|-----|
-| Language | Python 3.12 | Type hints, modern syntax |
-| Workflow | LangGraph | Conditional routing, state management, tracing integration |
-| LLM | OpenAI (`gpt-4o-mini`) | Structured outputs via `client.beta.chat.completions.parse()` — server-side constraint, no extra dependency |
-| OCR | Tesseract + pdf2image | Handles scanned PDFs (not just digital), demonstrates real OCR pipeline |
-| Tools | Composio | Unified API for Gmail + Google Sheets with managed OAuth |
-| API | FastAPI | Async webhook handler, background tasks for long-running processing |
-| Observability | Opik | Open-source, provider-agnostic tracing + eval experiment tracking |
-| Models | Pydantic v2 | Domain models, config, LLM response schemas, webhook validation |
-| Tests | pytest | Unit + integration + eval framework |
-| Linting | Ruff | Fast, single-tool Python linting |
-| Packaging | uv | Fast dependency resolution and lockfile |
-| Deployment | Docker + Railway | Multi-stage build, auto-deploy from GitHub |
+| Layer | Technology | Purpose |
+|:------|:-----------|:--------|
+| **Language** | Python 3.12 | Type hints, modern async |
+| **Workflow** | LangGraph | Conditional routing, typed state, tracing |
+| **LLM** | OpenAI `gpt-4o-mini` | Structured outputs via `client.beta.chat.completions.parse()` |
+| **OCR** | Tesseract + pdf2image | Handles scanned and digital PDFs |
+| **Integrations** | Composio | Managed OAuth for Gmail + Google Sheets |
+| **API** | FastAPI | Async webhook with background tasks |
+| **Observability** | Opik | Tracing + eval experiment tracking |
+| **Models** | Pydantic v2 | Domain models, config, LLM response schemas |
+| **Tests** | pytest | Unit + integration + eval framework |
+| **Linting** | Ruff | Fast Python linting |
+| **Packages** | uv | Fast dependency resolution |
+| **Deploy** | Docker + Railway | Multi-stage build, auto-deploy from GitHub |
+
+---
 
 ## Evaluation Framework
 
-The eval framework was the **first thing built** — before any node implementation. This eval-first approach means:
-
-1. Graders define what "correct" means for each metric
-2. Scenarios define input/expected-output pairs with PDF fixtures
-3. Nodes are implemented to pass the scenarios
-4. Regressions are caught immediately
+> The eval framework was the **first thing built** — before any node implementation. Graders and scenarios define "correct" before the code exists.
 
 ### Graders
 
-| Grader | Metric | How it works |
-|--------|--------|-------------|
+| Grader | Type | Methodology |
+|:-------|:-----|:------------|
 | **ClassificationAccuracy** | Binary | `actual.is_valid_po == expected.is_valid_po` |
-| **ExtractionAccuracy** | Field-level F1 | Compares 7 fields (order_id, customer, pickup, delivery, datetime, driver name/phone). Normalizes whitespace + case. |
-| **TrajectoryCorrectness** | Exact match | `actual.trajectory == expected.trajectory` (ordered node list) |
+| **ExtractionAccuracy** | Field-level F1 | Compares 7 fields with whitespace + case normalization |
+| **TrajectoryCorrectness** | Exact match | Actual vs expected ordered node list |
 | **ValidationCorrectness** | Set F1 | Precision/recall on `missing_fields` detection |
-| **EmailQuality** | Heuristic | 4 checks: length > 50 chars, mentions PO ID, confirmation language, mentions customer. Each = +0.25 |
+| **EmailQuality** | Heuristic | Length, PO ID mention, confirmation language, customer mention |
 
 ### Scenario Categories
 
-| Category | Count | Description |
-|----------|-------|-------------|
-| `happy_path` | Complete POs with all fields | Full pipeline: classify → extract → validate → track → notify → report |
-| `not_a_po` | Non-PO emails | Short pipeline: classify → report (skipped) |
-| `missing_fields` | POs with incomplete data | Full pipeline but with validation warnings |
-| `malformed_pdf` | Corrupted/noisy PDFs | Tests OCR resilience |
-| `ambiguous` | Edge cases | Multiple PO IDs, unclear addresses |
+| Category | What it tests |
+|:---------|:-------------|
+| `happy_path` | Complete POs — full pipeline end-to-end |
+| `not_a_po` | Non-PO emails — classify → report (skipped) |
+| `missing_fields` | Incomplete POs — validation warnings |
+| `malformed_pdf` | Corrupted/noisy PDFs — OCR resilience |
+| `ambiguous` | Edge cases — multiple PO IDs, unclear addresses |
 
 ### Eval Scores
 
-| Metric | Score | Target |
-|--------|-------|--------|
-| ClassificationAccuracy | 1.00 | >= 0.95 |
-| ExtractionAccuracy | 0.97 | >= 0.85 |
-| TrajectoryCorrectness | 1.00 | >= 0.95 |
-| ValidationCorrectness | 1.00 | >= 0.85 |
-| EmailQuality | 1.00 | >= 0.70 |
+| Metric | Score | Target | Status |
+|:-------|------:|:-------|:------:|
+| ClassificationAccuracy | **1.00** | >= 0.95 | :white_check_mark: |
+| ExtractionAccuracy | **0.97** | >= 0.85 | :white_check_mark: |
+| TrajectoryCorrectness | **1.00** | >= 0.95 | :white_check_mark: |
+| ValidationCorrectness | **1.00** | >= 0.85 | :white_check_mark: |
+| EmailQuality | **1.00** | >= 0.70 | :white_check_mark: |
+
+---
+
+## Getting Started
+
+### Prerequisites
+
+- Python 3.12+
+- [uv](https://docs.astral.sh/uv/) package manager
+- Tesseract OCR + Poppler
+- API keys: OpenAI, Composio, Opik (optional)
+
+```bash
+# macOS
+brew install tesseract poppler
+
+# Ubuntu/Debian
+sudo apt install tesseract-ocr tesseract-ocr-eng poppler-utils
+```
+
+### Installation
+
+```bash
+# Clone and install
+git clone https://github.com/your-username/purchase-order-agent.git
+cd purchase-order-agent
+uv sync
+
+# Configure environment
+cp .env.example .env
+# Edit .env with your API keys
+```
+
+### Running
+
+```bash
+# Start the webhook server
+uv run uvicorn src.api:app --reload
+
+# Run with Docker
+docker build -t po-agent .
+docker run -p 8000:8000 --env-file .env po-agent
+```
+
+### Testing
+
+```bash
+# Unit tests (fast, no API keys needed)
+uv run pytest tests/unit/
+
+# Integration tests (requires OPENAI_API_KEY)
+uv run pytest tests/integration/ -m integration
+
+# All tests
+uv run pytest tests/
+
+# Linting
+uv run ruff check src/ tests/ evals/
+```
 
 ### Running Evals
 
@@ -122,45 +264,50 @@ uv run python -m evals.run_eval --category happy_path
 uv run python -m evals.sync_dataset
 ```
 
-## Key Design Decisions & Tradeoffs
+---
 
-**Eval-first (test-first for AI)** — Graders and scenarios were designed before node implementations. This inverts the usual "build then test" flow and ensures every component has measurable acceptance criteria from the start.
+## Environment Variables
 
-**LangGraph over a simple pipeline** — A plain function chain would work for the current linear flow, but LangGraph provides conditional routing (classify → skip or continue), typed state, built-in tracing, and a clear path to adding cycles (e.g., re-entry for missing fields) without rewriting the orchestration layer.
+| Variable | Required | Description |
+|:---------|:--------:|:------------|
+| `OPENAI_API_KEY` | Yes | OpenAI API key |
+| `COMPOSIO_API_KEY` | Prod | Composio API key for Gmail + Sheets |
+| `COMPOSIO_USER_ID` | — | Composio entity ID (default: `default`) |
+| `COMPOSIO_WEBHOOK_SECRET` | — | Webhook HMAC signature verification |
+| `SPREADSHEET_ID` | Prod | Google Sheets spreadsheet ID |
+| `SHEET_NAME` | — | Sheet tab name (default: `Sheet1`) |
+| `OPIK_API_KEY` | — | Opik cloud tracking |
+| `OPIK_WORKSPACE` | — | Opik workspace name |
+| `OPIK_PROJECT_NAME` | — | Opik project name |
 
-**Tesseract over pdfplumber** — pdfplumber extracts text from digital PDFs but fails on scanned documents. Tesseract handles both, which is critical for real-world POs that are often scanned or photographed.
-
-**Composio direct execution over LLM tool calling** — Nodes decide *what* to do (send email, append row); Composio executes it. This keeps the workflow deterministic — the LLM generates content, not decisions about which tools to call.
-
-**Structured outputs (native `parse()`) over Instructor** — OpenAI's `beta.chat.completions.parse()` enforces the schema server-side via constrained decoding. No extra dependency, no client-side retry logic.
-
-**Opik over LangSmith** — Open-source, provider-agnostic (works with OpenAI, Anthropic, etc.), and supports experiment comparison with metric tracking. Eval results are versioned and comparable across runs.
-
-**Async webhook with `BackgroundTasks`** — The full pipeline (OCR + LLM) takes 30+ seconds. Returning 202 immediately prevents Composio webhook timeouts, while `BackgroundTasks` processes the email asynchronously.
-
-**In-memory webhook deduplication** — Composio sends the same webhook multiple times. A simple `set()` of seen message IDs prevents duplicate processing. Resets on deploy, which is acceptable since Composio's retry window is shorter than deploy cycles.
+---
 
 ## Project Structure
 
 ```
 src/
-├── api.py                    # FastAPI webhook endpoint + signature verification
+├── api.py                    # FastAPI webhook + signature verification
 ├── config.py                 # AppConfig (Pydantic BaseSettings, YAML + env)
 ├── builder.py                # WorkflowBuilder (config-driven DI)
 ├── workflow.py               # LangGraph graph definition
 ├── core/                     # Domain models, state, LLM response schemas
-│   ├── workflow_state.py     # POWorkflowState (TypedDict)
-│   ├── purchase_order.py     # PurchaseOrder, ExtractionResult
-│   ├── llm_responses.py      # ClassificationResult, LLMExtractionResponse
-│   └── webhook.py            # ComposioWebhookPayload, parse_composio_webhook
+│   ├── workflow_state.py     #   POWorkflowState (TypedDict)
+│   ├── purchase_order.py     #   PurchaseOrder, ExtractionResult
+│   ├── llm_responses.py      #   ClassificationResult, LLMExtractionResponse
+│   └── webhook.py            #   ComposioWebhookPayload, parse_composio_webhook
 ├── nodes/                    # LangGraph nodes (BaseNode subclasses)
-│   ├── base.py, classify.py, extract.py, validate.py
-│   ├── track.py, notify.py, report.py
+│   ├── base.py               #   BaseNode ABC
+│   ├── classify.py           #   ClassifyNode
+│   ├── extract.py            #   ExtractNode
+│   ├── validate.py           #   ValidateNode
+│   ├── track.py              #   TrackNode
+│   ├── notify.py             #   NotifyNode
+│   └── report.py             #   ReportNode
 └── services/                 # ABC interfaces + implementations
-    ├── llm/      base.py → openai.py
-    ├── ocr/      base.py → tesseract.py
-    ├── tools/    base.py → composio.py, mock.py
-    └── prompt_store/  base.py → local.py
+    ├── llm/                  #   LLMService → OpenAILLM
+    ├── ocr/                  #   OCRService → TesseractOCR
+    ├── tools/                #   ToolManager → ComposioToolManager, MockToolManager
+    └── prompt_store/         #   PromptStore → LocalPromptStore
 
 evals/
 ├── run_eval.py               # Evaluation runner (Opik integration)
@@ -170,87 +317,79 @@ evals/
 └── fixtures/                 # PDF test fixtures per category
 
 prompts/en/                   # YAML prompt templates
-├── classify.yaml             # Classification system + user prompts
-├── extract.yaml              # Extraction system + user prompts
-└── notify.yaml               # Notification system + confirmation + missing_info
+├── classify.yaml             #   Classification system + user prompts
+├── extract.yaml              #   Extraction system + user prompts
+└── notify.yaml               #   Notification templates
 
 tests/
-├── unit/                     # 215 tests, mocked, no API keys
-└── integration/              # 15 tests, real LLM/OCR/API calls
+├── unit/                     # 215 tests — mocked, no API keys
+└── integration/              # 15 tests — real LLM/OCR/API calls
 ```
 
-## Setup & Running
+---
 
-### Prerequisites
+## Design Decisions
 
-- Python 3.12+
-- [uv](https://docs.astral.sh/uv/) package manager
-- Tesseract OCR (`apt install tesseract-ocr tesseract-ocr-eng poppler-utils`)
-- API keys: OpenAI, Composio, Opik (optional)
+<details>
+<summary><b>Eval-first methodology</b> — why test before build?</summary>
 
-### Local Setup
+Graders and scenarios were designed before node implementations. This inverts the usual "build then test" flow and ensures every component has measurable acceptance criteria from the start. When a node is implemented, it either passes the scenarios or it doesn't — there's no ambiguity about "done."
+</details>
 
-```bash
-# Install dependencies
-uv sync
+<details>
+<summary><b>LangGraph over a simple pipeline</b> — isn't this overkill?</summary>
 
-# Copy and fill environment variables
-cp .env.example .env
-# Edit .env with your API keys
+A plain function chain would work for the current linear flow, but LangGraph provides conditional routing (classify → skip or continue), typed state, built-in tracing, and a clear path to adding cycles (e.g., re-entry for missing fields) without rewriting the orchestration layer.
+</details>
 
-# Run tests
-uv run pytest tests/unit/              # Fast, no API keys
-uv run pytest tests/integration/ -m integration  # Needs OPENAI_API_KEY
-uv run ruff check src/ tests/ evals/   # Linting
+<details>
+<summary><b>Tesseract over pdfplumber</b> — why not just extract text?</summary>
 
-# Run evals
-uv run python -m evals.run_eval --experiment-name "baseline"
+pdfplumber extracts text from digital PDFs but fails on scanned documents. Tesseract handles both, which is critical for real-world POs that are often scanned or photographed.
+</details>
 
-# Start locally
-uv run uvicorn src.api:app --reload
-```
+<details>
+<summary><b>Composio direct execution over LLM tool calling</b></summary>
 
-### Docker
+Nodes decide *what* to do (send email, append row); Composio executes it. This keeps the workflow deterministic — the LLM generates content, not decisions about which tools to call.
+</details>
 
-```bash
-# Build
-docker build -t po-agent .
+<details>
+<summary><b>Structured outputs (native <code>parse()</code>) over Instructor</b></summary>
 
-# Run (pass env vars)
-docker run -p 8000:8000 --env-file .env po-agent
-```
+OpenAI's `beta.chat.completions.parse()` enforces the schema server-side via constrained decoding. No extra dependency, no client-side retry logic.
+</details>
 
-### Environment Variables
+<details>
+<summary><b>Async webhook with <code>BackgroundTasks</code></b></summary>
 
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `OPENAI_API_KEY` | Yes | OpenAI API key |
-| `COMPOSIO_API_KEY` | Yes (prod) | Composio API key for Gmail/Sheets |
-| `COMPOSIO_USER_ID` | No | Composio entity ID (default: `default`) |
-| `COMPOSIO_WEBHOOK_SECRET` | No | Webhook signature verification secret |
-| `SPREADSHEET_ID` | Yes (prod) | Google Sheets spreadsheet ID |
-| `SHEET_NAME` | No | Sheet tab name (default: `Sheet1`) |
-| `OPIK_API_KEY` | No | Opik cloud tracking |
-| `OPIK_WORKSPACE` | No | Opik workspace name |
-| `OPIK_PROJECT_NAME` | No | Opik project name |
+The full pipeline (OCR + LLM) takes 30+ seconds. Returning 202 immediately prevents Composio webhook timeouts, while `BackgroundTasks` processes the email asynchronously.
+</details>
 
-## Improvements
+---
 
-### Scalability
+## Future Improvements
 
-**Webhook processing** — The current architecture processes emails synchronously in a FastAPI `BackgroundTasks` coroutine. This is bound to a single process and a single server. For higher throughput:
+<details>
+<summary><b>Scalability</b></summary>
 
-- **Task queue**: Replace `BackgroundTasks` with Celery or a Redis-backed queue (e.g., arq, dramatiq). This decouples webhook ingestion from processing, allows horizontal scaling of workers, and provides retry/dead-letter semantics out of the box.
-- **Stateful deduplication**: The in-memory `set()` for message deduplication resets on every deploy. A Redis or database-backed dedup store would survive restarts and work across multiple instances.
-- **Multi-tenant routing**: The current system processes all emails through a single Composio entity. Supporting multiple tenants would require routing webhooks by sender domain or Composio user ID, with per-tenant config (spreadsheet IDs, reply templates).
-- **Concurrent attachment processing**: Currently only the first attachment is processed. Supporting multiple attachments per email would require parallel OCR + extraction, with result merging in the validate node.
+- **Task queue** — Replace `BackgroundTasks` with Celery or Redis-backed queue (arq, dramatiq) for horizontal worker scaling and retry/dead-letter semantics
+- **Stateful deduplication** — Redis or database-backed dedup store that survives restarts and works across instances
+- **Multi-tenant routing** — Route webhooks by sender domain or Composio user ID with per-tenant config
+- **Concurrent attachments** — Parallel OCR + extraction for emails with multiple PDFs
+</details>
 
-### LLM-as-a-Judge
+<details>
+<summary><b>LLM-as-a-Judge evaluation</b></summary>
 
-The current `EmailQuality` grader uses heuristic checks (length, keyword presence) which are brittle and don't capture semantic quality. Replacing it with an **LLM-as-a-Judge** approach would provide more nuanced evaluation:
+- **Opik G-Eval integration** — Replace heuristic email grader with LLM-based scoring on a continuous scale
+- **Multi-dimensional scoring** — Separate scores for professionalism, completeness, actionability, accuracy
+- **Hybrid approach** — Heuristic grader in CI (fast/cheap), LLM judge in scheduled evals (rich signal)
+- **Beyond email** — Apply LLM judge to `classification_reason` quality and `extraction_warnings` helpfulness
+</details>
 
-- **Opik GEval integration**: Opik supports `G-Eval` style graders where an LLM scores outputs on criteria like tone, completeness, and accuracy. This would replace the 4-check heuristic with a single LLM call that evaluates email quality on a continuous scale.
-- **Multi-dimensional scoring**: An LLM judge could score separately on *professionalism*, *completeness* (does it mention all relevant PO details?), *actionability* (does the recipient know what to do next?), and *accuracy* (does it correctly reflect the extracted data?). This gives richer signal than a single 0-1 score.
-- **Calibration challenges**: LLM judges need calibration — they tend to score generously and are sensitive to prompt phrasing. Mitigations include few-shot examples of good/bad emails with target scores, and running the judge on a held-out set with human-annotated quality labels to measure judge-human agreement.
-- **Cost/latency tradeoff**: Each eval scenario would require an additional LLM call for the judge, roughly doubling eval cost. This is acceptable for nightly eval runs but too expensive for CI on every commit. A hybrid approach — heuristic grader in CI, LLM judge in scheduled evals — balances cost and quality.
-- **Beyond email**: The same LLM-as-a-Judge pattern could evaluate `classification_reason` quality (is the reasoning sound?) and `extraction_warnings` (are warnings helpful and accurate?), areas where heuristic graders are insufficient.
+---
+
+<div align="center">
+<sub>Built with an eval-first methodology — 215 unit tests, 15 integration tests, 25 eval scenarios, 5 graders.</sub>
+</div>
