@@ -109,7 +109,14 @@ def main():
     client = Opik()
     dataset_name = f"po-scenarios-{args.category}" if args.category else "po-scenarios-all"
     dataset = client.get_or_create_dataset(dataset_name)
-    dataset.insert(scenarios)
+
+    # Opik requires 'id' to be a UUID; rename our string ids to 'scenario_id'
+    dataset_items = []
+    for s in scenarios:
+        item = {**s}
+        item["scenario_id"] = item.pop("id", None)
+        dataset_items.append(item)
+    dataset.insert(dataset_items)
 
     # Run evaluation
     evaluate(
